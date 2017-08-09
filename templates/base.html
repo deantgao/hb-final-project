@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}TITLE GOES HERE{% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+</head>
+<body>
+	<ul>
+        {% for message in get_flashed_messages() %}
+        	<li>{{ message }}</li>
+        {% endfor %}
+	</ul>
+
+	 <div>
+            {% if 'logged_in' in session %}
+            <form action="/log_out">
+                Would you like to logout?
+                <input type="submit" value="Logout">
+            </form>
+            {% endif %}
+	</div>
+
+    {% block content %}BODY CONTENT GOES HERE{% endblock %}
+	}
+</body>
+</html>
