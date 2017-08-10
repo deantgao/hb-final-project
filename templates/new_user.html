@@ -10,61 +10,37 @@
 		Where are you located? <input type="text" name="location" id="loc_by_reg"><br>
 		What is your income level? 
 			<select name="income_lev">
-				<option></option>
-				<option value=1>Un/underemployed</option>
-				<option value=2>Below $30,000</option>
-				<option value=3>$30,000-$70,000</option>
-				<option value=4>$70,000-$100,000</option>
-				<option value=5>Over $100,000</option>
+				{% for income in incomes %}
+					<option value="{{ income.income_id }}">{{ income.type_of }}</option>
+				{% endfor %}
 			</select><br>
 		Age: 
 			<select name="age">
-				<option></option>
-				<option value=1>18 or Under</option>
-				<option value=2>19-25</option>
-				<option value=3>25-35</option>
-				<option value=4>35-50</option>
-				<option value=5>50-65</option>
-				<option value=6>65 or Older</option>
+				{% for age in ages %}
+					<option value="{{ age.age_id }}">{{ age.type_of }}</option>
+				{% endfor %}
 			</select><br>
 		Gender:
 			<select name="gender">
-				<option></option>
-				<option value=1>Transmasculine</option>
-				<option value=2>Transfeminine</option>
-				<option value=3>Woman</option>
-				<option value=4>Man</option>
-				<option value=5>Genderqueer</option>
-				<option value=6>Agender</option>
-				<option value=7>Two-Spirit</option><br>
-				<input type="text" name="other" id="gender_other">
+				{% for gender in genders %}
+					<option value="{{ gender.gender_id }}">{{ gender.type_of }}
+					</option>
+				{% endfor %}
 			</select><br>
 		Racial background:
 			<select name="race">
-				<option></option>
-				<option value=1>Black/African American</option>
-				<option value=2>Latino/a/x</option>
-				<option value=3>Pacific Islander</option>
-				<option value=4>Southeast Asian</option>
-				<option value=5>South Asian</option>
-				<option value=6>East Asian</option>
-				<option value=7>Native American</option>
-				<option value=8>White</option><br>
-				<option value=9>Mixed Race</option>
-				<input type="text" name="other" id="race_other">
+				{% for race in races %}
+					<option value="{{ race.race_id }}">{{ race.type_of}}
+					</option>
+				{% endfor %}
 			</select><br>
 		Sexual Orientation:
 			<select name="sex_or">
-				<option></option>
-				<option value=1>Queer</option>
-				<option value=2>Lesbian</option>
-				<option value=3>Gay</option>
-				<option value=4>Bisexual</option>
-				<option value=5>Pansexual</option>
-				<option value=6>Straight</option>
-				<option value=7>Asexual</option>
-				<input type="text" name="other" id="race_other">
-			</select><br>
+				{% for sex_or in sex_ors %}
+					<option value="{{ sex_or.sex_or_id }}">{{ sex_or.type_of }}
+					</option>
+				{% endfor %}
+			</select><br> -->
 		Upload a Profile Picture
 			<!-- something might go here -->
 			<br>

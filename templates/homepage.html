@@ -3,12 +3,13 @@
 
 {% block content %}
 	<h1>Welcome back, {{ session['logged_in'] }}!</h1>
+	<p>You have made a total of {{ gives }} gives and {{ gets }} gets.<br>
+	 <b>You have {{ gets_left }} more gets until it's your turn to give!</b>
+	 </p>
 	<h2>What are you interested in today?</h2>
 	<form action="/user_interest">
-		<input type="radio" name="user_interest" value="give">I have something to give<br>
-		<input type="radio" name="user_interest" value="need">I need something<br>
-		<input type="radio" name="user_interest" value="browse">I would like to browse<br>
-		<input type="submit" value="Let's Go!">
+		<button name="user_interest" type="submit" value="give">"I want to give something!"</button><br>
+		<button name="user_interest" type="submit" value="get">"I want to get something!"</button><br>
 	</form>
 		
 {% endblock %}

@@ -24,6 +24,8 @@ class User(db.Model):
     gender_id = db.Column(db.Integer, db.ForeignKey('user_genders.gender_id'), nullable=True)
     race_id = db.Column(db.Integer, db.ForeignKey('user_races.race_id'), nullable=True)
     sex_or_id = db.Column(db.Integer, db.ForeignKey('user_sex_ors.sex_or_id'), nullable=True)
+    num_gives = db.Column(db.Integer, nullable=False, default=0)
+    num_gets = db.Column(db.Integer, nullable=False, default=0)
     # comments_made = db.Column(nullable=True)
     # comments_tagged = db.Column(nullable=True)
     # followers = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
@@ -44,44 +46,44 @@ class User(db.Model):
                                         secondaryjoin="User.user_id==Following.user_followed")
 
 class Income(db.Model):
-    """Each user income category."""
+    """Each user income type."""
 
     __tablename__ = "user_incomes"
 
     income_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    category = db.Column(db.String(100), nullable=True)
+    type_of = db.Column(db.String(100), nullable=True)
 
 class Age(db.Model):
-    """Each user age category."""
+    """Each user age type."""
 
     __tablename__ = "user_ages"
 
     age_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    category = db.Column(db.String(50), nullable=True)
+    type_of = db.Column(db.String(50), nullable=True)
 
 class Gender(db.Model):
-    """Each user income category."""
+    """Each user gender ID."""
 
     __tablename__ = "user_genders"
 
     gender_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    category = db.Column(db.String(100), nullable=True)
+    type_of = db.Column(db.String(100), nullable=True)
 
 class Race(db.Model):
-    """Each user income category."""
+    """Each user racial background."""
 
     __tablename__ = "user_races"
 
     race_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    category = db.Column(db.String(100), nullable=True)
+    type_of = db.Column(db.String(100), nullable=True)
 
 class SexOr(db.Model):
-    """Each user income category."""
+    """Each user sexual orientation."""
 
     __tablename__ = "user_sex_ors"
 
     sex_or_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    category = db.Column(db.String(100), nullable=True)
+    type_of = db.Column(db.String(100), nullable=True)
 
 class Post(db.Model):
     """Each individual posting."""
@@ -195,6 +197,41 @@ def connect_to_db(app):
     db.app = app
     db.init_app(app)
 
+def create_categories(categories):
+    for category_name in categories:
+        category = Category(category_name=category_name)
+        db.session.add(category)
+    db.session.commit()
+
+def create_incomes(income_levs):
+    for income_lev in income_levs:
+        income = Income(type_of=income_lev)
+        db.session.add(income)
+    db.session.commit()
+
+def create_ages(ages):
+    for age in ages:
+        age_type = Age(type_of=age)
+        db.session.add(age_type)
+    db.session.commit()
+
+def create_genders(genders):
+    for gender in genders:
+        gender_type = Gender(type_of=gender)
+        db.session.add(gender_type)
+    db.session.commit()
+
+def create_races(races):
+    for race in races:
+        race_type = Race(type_of=race)
+        db.session.add(race_type)
+    db.session.commit()
+
+def create_sex_ors(sex_ors):
+    for sex_or in sex_ors:
+        sex_or_type = SexOr(type_of=sex_or)
+        db.session.add(sex_or_type)
+    db.session.commit()
 
 if __name__ == "__main__":
     # As a convenience, if we run this module interactively, it will leave
@@ -206,5 +243,27 @@ if __name__ == "__main__":
     app = Flask(__name__)
 
     connect_to_db(app)
+    db.drop_all()
     db.create_all()
     print "Connected to DB."
+
+    categories = ["Clothing", "Services", "Food", "Furniture", "Books", "Toys", "Electronics", "Vehicles"]
+    create_categories(categories)
+
+    income_levs = ["", "Un/underemployed", "Under $30,000", "$30,000-$70,000", "$70,000-$100,000", "Over $100,000"]
+    create_incomes(income_levs)
+
+    ages = ["", "18 or Under", "19-25", "25-35", "35-50", "50-65", "65 or Older"]
+    create_ages(ages)
+
+    genders = ["", "Transmasculine", "Transfeminine", "Woman", "Man", "Genderqueer", "Agender", "Two-Spirit"]
+    create_genders(genders)
+
+    races = ["", "Black/African American", "Latino/a/x", "Pacific Islander", "Southeast Asian", 
+             "South Asian", "East Asian", "Native American", "White", "Mixed Race"]
+    create_races(races)
+
+    sex_ors = ["", "Queer", "Lesbian", "Gay", "Bisexual", "Pansexual", "Straight", "Asexual"]
+    create_sex_ors(sex_ors)
+
+
