@@ -24,8 +24,9 @@ class User(db.Model):
     gender_id = db.Column(db.Integer, db.ForeignKey('user_genders.gender_id'), nullable=True)
     race_id = db.Column(db.Integer, db.ForeignKey('user_races.race_id'), nullable=True)
     sex_or_id = db.Column(db.Integer, db.ForeignKey('user_sex_ors.sex_or_id'), nullable=True)
-    num_gives = db.Column(db.Integer, nullable=False, default=0)
-    num_gets = db.Column(db.Integer, nullable=False, default=0)
+    # num_gives = db.Column(db.Integer, nullable=False, default=0)
+    # num_gets = db.Column(db.Integer, nullable=False, default=0) # don't need these fields because there
+    # already a is_give field in posts where these can be calculated
     # comments_made = db.Column(nullable=True)
     # comments_tagged = db.Column(nullable=True)
     # followers = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
@@ -43,7 +44,7 @@ class User(db.Model):
                                         secondaryjoin="User.user_id==Following.user_following")
     followees = db.relationship('User', secondary="followings", 
                                         primaryjoin="User.user_id==Following.user_following",
-                                        secondaryjoin="User.user_id==Following.user_followed")
+                                        secondaryjoin="User.user_id==Following.user_followed") # these could be separate tables(?)
 
 class Income(db.Model):
     """Each user income type."""
@@ -92,16 +93,17 @@ class Post(db.Model):
 
     post_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    title = db.Column(db.String(50), nullable=False)
-    description = db.Column(db.String(1000), nullable=True)
+    title = db.Column(db.String(50), nullable=True)
+    description = db.Column(db.String(1000), nullable=False)
     latitude = db.Column(db.String(100), nullable=True) #should these be strings?
     longitude = db.Column(db.String(100), nullable=True)
     post_date = db.Column(db.DateTime, nullable=False) # is there anything else needed here?
-    is_need = db.Column(db.Boolean(), nullable=False) # is this correct syntax for boolean?
+    is_give = db.Column(db.Boolean(), nullable=False, default=None) # is this correct syntax for boolean?
     is_active = db.Column(db.Boolean(), nullable=False, default=True) # is this correct syntax for boolean?
     featured_img = db.Column(db.String(400), nullable=True)
 
     user = db.relationship('User', backref="posts") # is this correct relationship to refer back to two FKs?
+    #categories = db.relationship('Category', secondary="post_categories", backref="posts")
 
 class Picture(db.Model):
     """Each picture associated with a post."""
@@ -115,16 +117,16 @@ class Picture(db.Model):
     post = db.relationship('Post', backref='pictures')
 
 class PostCategory(db.Model):
-    """Association for a post and the category(ies) it belongs to."""
+    """Association for a post and the category it belongs to."""
 
-    __tablename__ = "post-categories"
+    __tablename__ = "post_categories"
 
     post_cat_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.post_id'), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.category_id'), nullable=True)
 
-    post = db.relationship('Post', backref="post-categories")
-    category = db.relationship('Category', backref="post-categories")
+    post = db.relationship('Post', backref="post_categories")
+    category = db.relationship('Category', backref="post_categories")
 
 class Category(db.Model):
     """Category type for a post."""
@@ -170,10 +172,8 @@ class PostComment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     time_posted = db.Column(db.DateTime, nullable=False)
     comment_body = db.Column(db.String(400), nullable=False)
-    # tagged = db.Column(db.Array) # how would i store tags in this field? using an array/list?
 
-# how to create a table/field for tagging people in comments?
-
+    user = db.relationship('User', backref="comments")
 
 ##############################################################################
 # Helper functions

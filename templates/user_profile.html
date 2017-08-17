@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Confirm User Post{% endblock %}
+
+{% block content %}
+	<h1>{{ profile_user.username }}</h1>
+	<h3>{{ profile_user.username }}'s Recent Activity</h3>
+	{% for post in profile_user.posts %}
+		{% if post.is_give == True %}
+			<div>
+				{{ profile_user.username }} made a giving post at {{ post.post_date }}
+			</div>
+		{% else %}
+			<div>
+				{{ profile_user.username }} made a getting post at {{ post.post_date }}
+			</div>
+		{% endif %}
+		{% for comment in profile_user.comments %}
+			<div>
+				{{ profile_user.username }} commented on {{ comment.post_id.user_id.username }}'s post at {{ comment.time_posted }}
+			</div>
+		{% endfor %}
+	{% endfor %}
+{% endblock %}

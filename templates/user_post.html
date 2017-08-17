@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}User to Post Page{% endblock %}
+
+{% block content %}
+	{% if user_interest == "give" %}
+		<h1>{{ give_compliment }}, {{ session['logged_in'] }}!</h1>
+	{% else %}
+		<h1>{{ get_compliment }}, {{ session['logged_in'] }}!</h1>
+	{% endif %}
+		
+	<form id="confirm_post" action="/confirm_post" method="POST">Please select the category(ies) that your 
+	{% if user_interest == "give" %}
+		giving
+	{% else %}
+		getting
+	{% endif %}
+	post matches:<br>
+		{% for category in categories %}
+			<input type="checkbox" name="category" value="{{category.category_id}}" class="category">{{category.category_name}}<br>
+		{% endfor %}
+		<!-- <input type="submit" id="tagPost" name="tagPost" value="Tag My Post">
+		<div id="category_tags">
+		</div><br> -->
+		<br>
+		Post Title: 
+		<input name="post_title" id="post_title" type="text"><br><br>
+		Please enter the body of your post:<br>
+		<textarea rows=8 columns=50 id="post_message" name="post_message">
+		</textarea><br>
+		{% if user_interest == "give" %}
+			<input name="post_type" type="hidden" value="give">
+			<input name="post" type="submit" id="submit_post" value="Confirm my giving post!">
+		{% else %}
+			<input name="post_type" type="hidden" value="get">
+			<input name="post" type="submit" id="submit_post" value="Confirm my getting post!">
+		{% endif %}
+	</form>
+
+	<script type="text/javascript"
+		src="/static/js/give_post.js">
+	</script>
+{% endblock %}

@@ -3,6 +3,22 @@
 <head>
     <title>{% block title %}TITLE GOES HERE{% endblock %}</title>
     <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <style>
+        #post_message {
+            height: 300px;
+            width: 800px;
+        }
+        .category_tag {
+           border: 1px solid red;
+           padding: 2px; 
+           margin: 5px;
+
+        #post_title {
+            width: 800px;
+        }
+        }
+    </style>
 </head>
 <body>
 	<ul>
@@ -19,11 +35,8 @@
             </form>
             {% endif %}
 	</div>
-    <script
-      src="http://code.jquery.com/jquery-3.2.1.slim.js"
-      integrity="sha256-tA8y0XqiwnpwmOIl3SGAcFl2RvxHjA8qp0+1uCGmRmg="
-      crossorigin="anonymous"></script>
-    {% block content %}BODY CONTENT GOES HERE{% endblock %}
     
+    {% block content %}BODY CONTENT GOES HERE{% endblock %}
+
 </body>
 </html>

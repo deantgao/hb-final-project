@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Browsing Page{% endblock %}
+
+{% block content %}
+
+{% if 'logged_in' in session %}
+	{% if post_type == "get" %}
+		<h1>Here are some recommended posts for you based on your selected categories of interest!</h1>
+		{% for match_give_obj in match_give_objs %}
+			<a href="/post/post_id/{{ match_give_obj.post_id }}">
+			{% if match_give_obj.title == None %}
+			Untitled by user: {{ match_give_obj.user.username }}</a><br>
+			{% else %} 
+			{{ match_give_obj.title }} by user: {{ match_give_obj.user.username }}</a><br> 
+			{% endif %}
+		{% endfor %}
+			<br>
+			<a href="/browse_all">See All Gives</a>
+	{% else %}
+		<h1>Welcome to the browsing section, {{ session['logged_in'] }}! What would you like to see today?</h1>
+		{% for give_post in give_post_objs %}
+			<span><a href="/post/post_id/{{ give_post.post_id }}">{{ give_post.title }}</a></span>
+		{% endfor %}
+	{% endif %}
+{% else %}
+{% for give_post in give_post_objs %}
+	<span><a href="/post/post_id/{{ give_post.post_id }}">{{ give_post.title }}</a></span>
+{% endfor %}
+{% endif %}		
+{% endblock %}
