@@ -3,18 +3,28 @@
 
 {% block content %}
 	<h1>Welcome back, {{ session['logged_in'] }}!</h1>
-	{% if gives %}
-		<p>You have made a total of {{ gives }} gives and {{ gets }} gets.<br>
-	 	<b>You have {{ 10 - gets }} more gets until it's your turn to give!</b>
+		<p>You have made a total of {{ num_gives }} gives and {{ num_gets }} gets.<br>
+	{% if user_score > 0 %}
+		<b>You have {{ user_score }} more gets until it's your turn to give!</b>
 	{% else %}
-		<p>You have made a total of 0 gives and 0 gets.<br>
-	 	<b>You have 10 more gets until it's your turn to give!</b>
-	 	</p>
-	 {% endif %}
+		<b>I'm sorry! You must give again before you make another get!</b>
+	{% endif %}
 	<h2>What are you interested in today?</h2>
 	<form action="/user_interest">
-		<button name="user_interest" type="submit" value="give">"I want to give something!"</button><br>
-		<button name="user_interest" type="submit" value="get">"I want to get something!"</button><br>
+		<input type="hidden" id="user_score" value="{{ user_score }}">
+		<button id="give_button" name="user_interest" type="submit" value="give">"I want to give something!"</button><br>
+		<button id="get_button" name="user_interest" type="submit" value="get">"I want to get something!"</button><br>
 	</form>
+
+	<script>
+		var user_score = $('#user_score').val();
+		if (user_score < 1) {
+			disable_get();
+		}
+		function disable_get() {
+			$('#get_button').prop('disabled', true);
+		}
+
+	</script>
 		
 {% endblock %}

@@ -16,7 +16,7 @@
 		{% endif %}
 		{% for comment in profile_user.comments %}
 			<div>
-				{{ profile_user.username }} commented on {{ comment.post_id.user_id.username }}'s post at {{ comment.time_posted }}
+				{{ profile_user.username }} commented on <a href="/{{ comment.post.user.username }}">{{ comment.post.user.username }}</a>'s post at {{ comment.time_posted }}
 			</div>
 		{% endfor %}
 	{% endfor %}

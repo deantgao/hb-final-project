@@ -26,7 +26,7 @@ GET_COMPLIMENTS = ["Hope you find what you are looking for",
 def show_form():
     """Welcome page and request login or sign up."""
     
-    if session.get("user") != None:
+    if "logged_in" in session:
         return redirect("/user_home")
     else:
         return render_template("welcomepage.html")
@@ -41,7 +41,7 @@ def new_user():
     races = Race.query.all()
     sex_ors = SexOr.query.all()
 
-    if session.get("user") != None:
+    if "logged_in" in session:
         return redirect("/user_home")
     else:
         return render_template("new_user.html", incomes=incomes, ages=ages, genders=genders,
@@ -81,7 +81,7 @@ def create_account():
 def log_in():
     """Display login page."""
 
-    if session.get("user") != None:
+    if "logged_in" in session:
         return redirect("/user_home")
     else:
         return render_template("login_form.html")
@@ -112,10 +112,12 @@ def home_menu():
     username = session.get('logged_in')
     user_obj = User.query.filter_by(username=session.get('logged_in')).first()
     user_post_objs = user_obj.posts
-    gives, gets = calculate_user_score(user_post_objs)
+    num_gives = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == True])
+    num_gets = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == False])
+    user_score = calculate_user_score(num_gives, num_gets)
 
     if session.get("logged_in") != None:
-        return render_template("homepage.html", gives=gives, gets=gets)
+        return render_template("homepage.html", user_score=user_score, num_gives=num_gives, num_gets=num_gets)
     else: 
         return redirect("/login_form")
 
@@ -128,10 +130,10 @@ def user_choice():
 
     if user_interest == "give":
         give_compliment = random.choice(GIVE_COMPLIMENTS)
-        return render_template("user_post.html", user_interest=user_interest, give_compliment=give_compliment, categories=categories)
+        return render_template("user_submit_post.html", user_interest=user_interest, give_compliment=give_compliment, categories=categories)
     elif user_interest == "get":
         get_compliment = random.choice(GET_COMPLIMENTS)
-        return render_template("user_post.html", user_interest=user_interest, get_compliment=get_compliment, categories=categories)
+        return render_template("user_submit_post.html", user_interest=user_interest, get_compliment=get_compliment, categories=categories)
 
 # @app.route("/save_categories")
 # def save_categories():
@@ -164,7 +166,8 @@ def confirm_post():
 
     post_categories = [PostCategory(post_id=post.post_id, category_id=category.category_id) for category in category_objs]
 
-    map(lambda x: db.session.add(x), post_categories) #map(takes anonymous function lambda, 
+    map(lambda x: db.session.add(x), post_categories) 
+    #map(takes anonymous function lambda, iterates over post_categories)
     db.session.commit()
     return render_template("post_confirm.html", is_give=give_or_get, post_categories=post_categories)
 
@@ -181,6 +184,7 @@ def browse_posts():
     get_category_objs = request.form.getlist("post_category")
     get_category_ids = [int(get_category_obj) for get_category_obj in get_category_objs] # 
     give_post_objs = Post.query.filter_by(is_give=True).all()
+    get_post_objs = Post.query.filter_by(is_give=False).all()
     give_category_ids = [(give_post_obj.post_id, [post_category.category_id for post_category in give_post_obj.post_categories]) for give_post_obj in give_post_objs]
     gives_match_gets = filter(filter_post_by_category, give_category_ids) # a list of tuples (post_id number, [post_category ids where get matches give])
     give_post_ids = []
@@ -192,16 +196,26 @@ def browse_posts():
     # iterates over a list and passes in each item to the preceding function as "post")
     match_give_objs = [Post.query.filter_by(post_id=give_post_id).first() for give_post_id in give_post_ids]
 
-    return render_template("browse.html", post_type=post_type, give_post_objs=give_post_objs, match_give_objs=match_give_objs)
+    return render_template("browse.html", post_type=post_type, get_post_objs=get_post_objs, give_post_objs=give_post_objs, match_give_objs=match_give_objs)
+
+@app.route("/browse_all")
+def browse_all():
+    """Allows users to browse all give posts."""
+
+    return render_template("browse.html", post_type=None, give_post_objs=Post.query.filter_by(is_give=True).all())
 
 @app.route("/post/post_id/<int:post_id>")
-def user_post(post_id):
+def user_posting(post_id):
     """Displays each individual page for a user's post."""
 
-    user_give_post = Post.query.filter_by(post_id=post_id).one()
+    user_posting = Post.query.filter_by(post_id=post_id).one() 
+    #this should be the user posting that corresponds with the url post_id <from browse.html
     post_comments = PostComment.query.filter_by(post_id=post_id).all()
+    user_posts = User.query.filter_by(username=session.get("logged_in")).one().posts
+    num_gives = len([user_post.is_give for user_post in user_posts if user_post.is_give == True])
     
-    return render_template("user_give_post.html", user_give_post=user_give_post, post_comments=post_comments)
+    return render_template("user_posting.html", user_posting=user_posting, post_comments=post_comments, 
+                            num_gives=num_gives)
 
 @app.route("/save_comment", methods=["POST"])
 def save_comment():
@@ -223,7 +237,10 @@ def user_profile(username):
     """Displays individual user's profile page with their user activity."""
 
     profile_user_obj = User.query.filter_by(username=username).one()
-    
+    profile_user_obj_posts = User.query.filter_by(username=username).one().posts
+    user_comment_objs = PostComment.query.filter_by(user=profile_user_obj).all()
+    all_user_activity_objs = profile_user_obj_posts + user_comment_objs
+    all_user_activity_objs.sort(key=lambda obj: obj.post_date if type(obj) == Post else obj.time_posted)
 
     return render_template("user_profile.html", profile_user=profile_user_obj)
 
@@ -239,17 +256,14 @@ def log_out():
 # Helper functions 
 
 # create a function to calculate users' getting and giving scores   
-def calculate_user_score(user_posts):
+def calculate_user_score(num_gives, num_gets):
     """Calculates user score for getting and giving."""
-    gives = 0
-    gets = 0
-    
-    for post in user_posts:
-        if post.is_give == True:
-            gives += 1
-        else:
-            gets += 1
-    return gives, gets
+    score = 10
+    if num_gives != 0:
+        score += num_gives * 5 - num_gets
+    elif num_gives == 0 and num_gets != 0:
+        score -= num_gets
+    return score
 
 def is_give_or_get(post_type):
         """Returns true if a user post is giving, returns false if a user post is getting."""

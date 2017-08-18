@@ -28,13 +28,18 @@
 	</ul>
 
 	 <div>
-            {% if 'logged_in' in session %}
-            <form action="/log_out">
-                Would you like to logout?
-                <input type="submit" value="Logout">
-            </form>
-            {% endif %}
+        {% if 'logged_in' in session %}
+        <form action="/log_out">
+            Would you like to logout?
+            <input type="submit" value="Logout">
+        </form>
+        {% endif %}
 	</div>
+        {% if 'logged_in' in session %}
+        <a href="/user_home">Return to my Homepage</a>
+        {% endif %}
+    <div>
+
     
     {% block content %}BODY CONTENT GOES HERE{% endblock %}
 

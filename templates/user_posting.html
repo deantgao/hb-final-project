@@ -1,25 +1,24 @@
 {% extends 'base.html' %}
-{% block title %}User Give Post{% endblock %}
+{% block title %}User Posting{% endblock %}
 
 {% block content %}
-	<h1>{{ user_give_post.title }}</h1>
-		<input id="post_id" name="post_id" type="hidden" value="{{ user_give_post.post_id }}">
-		<p id="post_date">{{ user_give_post.post_date }}<br>
-		<p id="post_description">{{ user_give_post.description }}</p><br>
-		{% if 'logged_in' in session %}
+	<h1>{{ user_posting.title }}</h1>
+		<input id="post_id" name="post_id" type="hidden" value="{{ user_posting.post_id }}">
+		<p id="post_date">{{ user_posting.post_date }}<br>
+		<p id="post_description">{{ user_posting.description }}</p><br>
+		{% if 'logged_in' in session and num_gives > 0 %}
 			<form id="post_comment" action="/save_comment" method="POST">
 				<textarea id="comment_body" name="comment" rows=3 columns=100>
 				</textarea><br>
 				<input id="submit_comment" type="submit" value="Post Comment">
-			</form>
+			</form><br>
 		{% endif %}
-		<br>
 		<h3>Comments on Posting:</h3>
 		{% for comment in post_comments %}
 			<div>"{{ comment.comment_body }}" posted at: {{ comment.time_posted }} by user <a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a></div>
 		{% endfor %}
 		<div id="new_comment"></div>
 
-<script type="text/javascript" src="/static/js/user_give_post.js"></script>
+<script type="text/javascript" src="/static/js/user_posting.js"></script>
 		
 {% endblock %}

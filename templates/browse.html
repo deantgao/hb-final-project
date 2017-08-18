@@ -15,16 +15,17 @@
 			{% endif %}
 		{% endfor %}
 			<br>
-			<a href="/browse_all">See All Gives</a>
 	{% else %}
 		<h1>Welcome to the browsing section, {{ session['logged_in'] }}! What would you like to see today?</h1>
-		{% for give_post in give_post_objs %}
-			<span><a href="/post/post_id/{{ give_post.post_id }}">{{ give_post.title }}</a></span>
-		{% endfor %}
 	{% endif %}
-{% else %}
+{% endif %}
+<h4>Here are all the give posts:</h4>
 {% for give_post in give_post_objs %}
-	<span><a href="/post/post_id/{{ give_post.post_id }}">{{ give_post.title }}</a></span>
+	<span><a href="/post/post_id/{{ give_post.post_id }}">{{ give_post.title }}</a></span><br>
 {% endfor %}
-{% endif %}		
+<h4>Here are all the get posts:</h4>
+{% for get_post in get_post_objs %}
+	<span><a href="/post/post_id/{{ get_post.post_id }}">{{ get_post.title }}</a></span><br>
+{% endfor %}
+		
 {% endblock %}

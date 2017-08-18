@@ -174,6 +174,7 @@ class PostComment(db.Model):
     comment_body = db.Column(db.String(400), nullable=False)
 
     user = db.relationship('User', backref="comments")
+    post = db.relationship('Post', backref="comments")
 
 ##############################################################################
 # Helper functions
@@ -243,27 +244,27 @@ if __name__ == "__main__":
     app = Flask(__name__)
 
     connect_to_db(app)
-    db.drop_all()
-    db.create_all()
-    print "Connected to DB."
+    # db.drop_all()
+    # db.create_all()
+    # print "Connected to DB."
 
-    categories = ["Clothing", "Services", "Food", "Furniture", "Books", "Toys", "Electronics", "Vehicles"]
-    create_categories(categories)
+    # categories = ["Clothing", "Services", "Food", "Furniture", "Books", "Toys", "Electronics", "Vehicles"]
+    # create_categories(categories)
 
-    income_levs = ["", "Un/underemployed", "Under $30,000", "$30,000-$70,000", "$70,000-$100,000", "Over $100,000"]
-    create_incomes(income_levs)
+    # income_levs = ["", "Un/underemployed", "Under $30,000", "$30,000-$70,000", "$70,000-$100,000", "Over $100,000"]
+    # create_incomes(income_levs)
 
-    ages = ["", "18 or Under", "19-25", "25-35", "35-50", "50-65", "65 or Older"]
-    create_ages(ages)
+    # ages = ["", "18 or Under", "19-25", "25-35", "35-50", "50-65", "65 or Older"]
+    # create_ages(ages)
 
-    genders = ["", "Transmasculine", "Transfeminine", "Woman", "Man", "Genderqueer", "Agender", "Two-Spirit"]
-    create_genders(genders)
+    # genders = ["", "Transmasculine", "Transfeminine", "Woman", "Man", "Genderqueer", "Agender", "Two-Spirit"]
+    # create_genders(genders)
 
-    races = ["", "Black/African American", "Latino/a/x", "Pacific Islander", "Southeast Asian", 
-             "South Asian", "East Asian", "Native American", "White", "Mixed Race"]
-    create_races(races)
+    # races = ["", "Black/African American", "Latino/a/x", "Pacific Islander", "Southeast Asian", 
+    #          "South Asian", "East Asian", "Native American", "White", "Mixed Race"]
+    # create_races(races)
 
-    sex_ors = ["", "Queer", "Lesbian", "Gay", "Bisexual", "Pansexual", "Straight", "Asexual"]
-    create_sex_ors(sex_ors)
+    # sex_ors = ["", "Queer", "Lesbian", "Gay", "Bisexual", "Pansexual", "Straight", "Asexual"]
+    # create_sex_ors(sex_ors)
 
 
