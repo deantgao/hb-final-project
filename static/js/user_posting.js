@@ -22,6 +22,32 @@ function postComment(evt) {
 
 $('#post_comment').on('submit', postComment);
 
+function makeGetRequest(evt) {
+	evt.preventDefault();
+	var request_message = $('#get_request').val();
+	var post_id = $('#post_id').val();
+	var data = {'request_message' : request_message,
+				'post_id' : post_id};
+	$.post('/make_get_request', data, function (results) {
+			var disable_request = $('#get_request').prop('disabled', true);
+			var request_receipt = $('#request_receipt').append("<h6>" + results['results'] + "</h6>");
+		})
+}
+
+$('#get_request').on('click', makeGetRequest);
+
+// function receiveGetRequest() {
+// 	var post_id = $('#post_id').val();
+// 	var request_message = $('#get_request').val();
+// 	var data = {'request_message' : request_message,
+// 				'post_id' : post_id};
+// 	$.post('/send_get_request', data, function (results) {
+
+// 	})
+// }
+
+// $('#get_request').on('click', receiveGetRequest)
+
 // function saveCategories(evt) {
 // 	evt.preventDefault();
 // 	var categories = $('#save_categories').serialize(); // $ -> jquery

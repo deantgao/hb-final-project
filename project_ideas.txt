@@ -1,0 +1,8 @@
+- have a claim button (is_claimed on Post) that replaces get postings as user_gets
+	- related to the claim button is the feature that give posters can review and give one approval for claim which then expires(disables?) their post
+- users can follow each other which will update their own homepage with the activity of the people they're following
+- if a user takes down a posting, that posting is deleted from the database
+- users can message each other
+- users can find posts by key word search
+- upload pictures option (user profile and posting pics)
+- identify user/item location within a 3 mile radius

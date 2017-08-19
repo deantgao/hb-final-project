@@ -27,18 +27,22 @@
         {% endfor %}
 	</ul>
 
-	 <div>
-        {% if 'logged_in' in session %}
-        <form action="/log_out">
-            Would you like to logout?
-            <input type="submit" value="Logout">
-        </form>
-        {% endif %}
-	</div>
-        {% if 'logged_in' in session %}
-        <a href="/user_home">Return to my Homepage</a>
-        {% endif %}
-    <div>
+	 {% if 'logged_in' in session %}
+        <div>
+            <form action="/log_out">
+                Would you like to logout?
+                <input type="submit" value="Logout">
+            </form>
+	   </div>
+            <a href="/user_home">Return to My Homepage</a>
+        <div>
+        <div>
+            <a href="/user_profile/{{ session.get('logged_in') }}">See My Profile</a>
+        </div>
+        <div>
+            <a href="/browse">Browse</a>
+        </div>
+    {% endif %}
 
     
     {% block content %}BODY CONTENT GOES HERE{% endblock %}

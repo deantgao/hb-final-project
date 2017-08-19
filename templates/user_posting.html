@@ -6,7 +6,7 @@
 		<input id="post_id" name="post_id" type="hidden" value="{{ user_posting.post_id }}">
 		<p id="post_date">{{ user_posting.post_date }}<br>
 		<p id="post_description">{{ user_posting.description }}</p><br>
-		{% if 'logged_in' in session and num_gives > 0 %}
+		{% if 'logged_in' in session and user_score > 0 %}
 			<form id="post_comment" action="/save_comment" method="POST">
 				<textarea id="comment_body" name="comment" rows=3 columns=100>
 				</textarea><br>
@@ -17,7 +17,12 @@
 		{% for comment in post_comments %}
 			<div>"{{ comment.comment_body }}" posted at: {{ comment.time_posted }} by user <a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a></div>
 		{% endfor %}
-		<div id="new_comment"></div>
+		<div id="new_comment"></div><br>
+		<form id="get_request" action="/send_get_request">
+			<button id="submit_request" name="request" type="submit" value="get_request">Make a Get Request</button>
+		</form>
+		<div id="request_receipt">
+		</div>
 
 <script type="text/javascript" src="/static/js/user_posting.js"></script>
 		

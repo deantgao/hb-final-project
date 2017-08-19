@@ -1,7 +1,7 @@
 from flask import Flask, redirect, request, render_template, session, flash, jsonify
 # from flask_debugtoolbar import DebugToolbarExtension
 from jinja2 import StrictUndefined
-from model import PostComment, Age, Income, Gender, SexOr, Race, User, Post, Picture, PostCategory, Category, Message, Following, connect_to_db, db 
+from model import GetRequest, PostComment, Age, Income, Gender, SexOr, Race, User, Post, Picture, PostCategory, Category, Message, Following, connect_to_db, db 
 import random
 import datetime
 
@@ -109,14 +109,15 @@ def verify_user():
 def home_menu():
     """Displays user's homepage and menu of user options."""
 
-    username = session.get('logged_in')
-    user_obj = User.query.filter_by(username=session.get('logged_in')).first()
-    user_post_objs = user_obj.posts
-    num_gives = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == True])
-    num_gets = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == False])
-    user_score = calculate_user_score(num_gives, num_gets)
-
-    if session.get("logged_in") != None:
+    if 'logged_in' in session:
+        username = session.get('logged_in')
+        user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
+        user_post_objs = Post.query.filter_by(user_id=user_id).all()
+        get_request_objs = GetRequest.query.filter_by(user_requested=User.query.filter_by(username=session.get('logged_in')).first()).all()
+        # print "are these all the get_request_objs for this user???", get_request_objs
+        num_gives = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == True])
+        num_gets = len([get_request_obj for get_request_obj in get_request_objs if get_request_obj.request_approved == True])
+        user_score = calculate_user_score(num_gives, num_gets)
         return render_template("homepage.html", user_score=user_score, num_gives=num_gives, num_gets=num_gets)
     else: 
         return redirect("/login_form")
@@ -160,7 +161,7 @@ def confirm_post():
     post_title = request.form.get("post_title")
     description = request.form.get("post_message")
     give_or_get = is_give_or_get(post_type) # returns t or f
-    post = Post(user_id=user_id, title=post_title, description=description, post_date=datetime.datetime.now(), is_give=give_or_get, is_active=True)
+    post = Post(user_id=user_id, title=post_title, description=description, post_date=datetime.datetime.now(), is_give=give_or_get)
     db.session.add(post)
     db.session.commit()
 
@@ -173,7 +174,7 @@ def confirm_post():
 
 @app.route("/browse", methods=["GET", "POST"])
 def browse_posts():
-    """Displays page where user can browse postings and are given recommended posts."""
+    """Displays page where user can browse postings and is given recommended posts."""
 
     def filter_post_by_category(post):
         """Determines all the instances where a get post categories match give posts categories."""
@@ -208,23 +209,27 @@ def browse_all():
 def user_posting(post_id):
     """Displays each individual page for a user's post."""
 
-    user_posting = Post.query.filter_by(post_id=post_id).one() 
+    user_posting_obj = Post.query.filter_by(post_id=post_id).first() 
     #this should be the user posting that corresponds with the url post_id <from browse.html
     post_comments = PostComment.query.filter_by(post_id=post_id).all()
-    user_posts = User.query.filter_by(username=session.get("logged_in")).one().posts
-    num_gives = len([user_post.is_give for user_post in user_posts if user_post.is_give == True])
+    # user_post = User.query.filter_by(username=session.get("logged_in")).first().posts
+    user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
+    user_post_objs = Post.query.filter_by(user_id=user_id).all()
+    get_request_objs = GetRequest.query.filter_by(user_requested=User.query.filter_by(username=session.get('logged_in')).first()).all()
+    num_gives = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == True])
+    num_gets = len([get_request_obj for get_request_obj in get_request_objs if get_request_obj.request_approved == True])
+    user_score = calculate_user_score(num_gives, num_gets)
     
-    return render_template("user_posting.html", user_posting=user_posting, post_comments=post_comments, 
-                            num_gives=num_gives)
+    return render_template("user_posting.html", user_posting=user_posting_obj, post_comments=post_comments, 
+                            user_score=user_score)
 
 @app.route("/save_comment", methods=["POST"])
 def save_comment():
     """Saves a comment on a post to the database."""
 
     post_comment = request.form.get("comments")
-    user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
     post_id = request.form.get("post_id")
-    print post_id
+    user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
     comment = PostComment(post_id=post_id, user_id=user_id, time_posted=datetime.datetime.now(), comment_body=post_comment)
     db.session.add(comment)
     db.session.commit()
@@ -232,17 +237,50 @@ def save_comment():
     com_post_time = datetime.datetime.strftime(comment.time_posted, "%Y-%m-%d")
     return jsonify({'results' : com_post_time})
 
+@app.route("/make_get_request", methods=["POST"])
+def make_get_request():
+    """Saves a get request to the database."""
+
+    request_message = request.form.get("request_message")
+    post_id = request.form.get("post_id")
+    post_obj = Post.query.filter_by(post_id=post_id).one()
+    post_user_obj = post_obj.user
+    requests_for_user_objs = post_obj.get_requests
+    user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
+    request_message = GetRequest(post_id=post_id, user_id=user_id, time_requested=datetime.datetime.now(), 
+                                 request_message=request_message)
+    db.session.add(request_message)
+    db.session.commit()
+
+    return jsonify({'results' : "Request Sent"})
+
+# @app.route("/send_get_request", methods=["POST"])
+# def send_get_request():
+#     """Sends request and message to user of posting."""
+
+#     request_message = request.form.get("request_message")
+#     post_id = request.form.get("post_id")
+#     post_obj = Post.query.filter_by(post_id=post_id).one()
+#     post_user_obj = post_obj.user
+#     requests_for_user_objs = post_obj.get_requests
+#     user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
+
+#     return render_template("/user_home", )
+
+
 @app.route("/user_profile/<username>")
 def user_profile(username):
     """Displays individual user's profile page with their user activity."""
 
-    profile_user_obj = User.query.filter_by(username=username).one()
-    profile_user_obj_posts = User.query.filter_by(username=username).one().posts
-    user_comment_objs = PostComment.query.filter_by(user=profile_user_obj).all()
-    all_user_activity_objs = profile_user_obj_posts + user_comment_objs
+    profile_user_obj = User.query.filter_by(username=username).first()
+    profile_user_post_objs = Post.query.filter_by(user_id=profile_user_obj.user_id).all()
+    profile_user_comment_objs = PostComment.query.filter_by(user=profile_user_obj).all()
+    all_user_activity_objs = profile_user_post_objs + profile_user_comment_objs
     all_user_activity_objs.sort(key=lambda obj: obj.post_date if type(obj) == Post else obj.time_posted)
+    print "these should be chronologically ordered user activity: ", all_user_activity_objs
 
-    return render_template("user_profile.html", profile_user=profile_user_obj)
+    return render_template("user_profile.html", profile_user=profile_user_obj, 
+                            all_user_activity=all_user_activity_objs)
 
 @app.route("/log_out")
 def log_out():
@@ -258,9 +296,9 @@ def log_out():
 # create a function to calculate users' getting and giving scores   
 def calculate_user_score(num_gives, num_gets):
     """Calculates user score for getting and giving."""
-    score = 10
+    score = 5
     if num_gives != 0:
-        score += num_gives * 5 - num_gets
+        score += num_gives * 3 - num_gets
     elif num_gives == 0 and num_gets != 0:
         score -= num_gets
     return score

@@ -4,20 +4,19 @@
 {% block content %}
 	<h1>{{ profile_user.username }}</h1>
 	<h3>{{ profile_user.username }}'s Recent Activity</h3>
-	{% for post in profile_user.posts %}
-		{% if post.is_give == True %}
+	{% for activity in all_user_activity %}
+		{% if activity.is_give == True %}
 			<div>
-				{{ profile_user.username }} made a giving post at {{ post.post_date }}
+				{{ profile_user.username }} made a giving post at {{ activity.post_date }}
 			</div>
-		{% else %}
+		{% elif activity.is_give == False %}
 			<div>
-				{{ profile_user.username }} made a getting post at {{ post.post_date }}
+				{{ profile_user.username }} made a getting post at {{ activity.post_date }}
+			</div>
+		{% elif activity.comment_body %}
+			<div>
+				{{ profile_user.username }} commented on <a href="/user_profile/{{ activity.post.post_give_user.username }}">{{ activity.post.post_give_user.username }}</a>'s post at {{ activity.time_posted }}
 			</div>
 		{% endif %}
-		{% for comment in profile_user.comments %}
-			<div>
-				{{ profile_user.username }} commented on <a href="/{{ comment.post.user.username }}">{{ comment.post.user.username }}</a>'s post at {{ comment.time_posted }}
-			</div>
-		{% endfor %}
 	{% endfor %}
 {% endblock %}
