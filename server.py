@@ -1,7 +1,7 @@
 from flask import Flask, redirect, request, render_template, session, flash, jsonify
 # from flask_debugtoolbar import DebugToolbarExtension
 from jinja2 import StrictUndefined
-from model import GetRequest, PostComment, Age, Income, Gender, SexOr, Race, User, Post, Picture, PostCategory, Category, Message, Following, connect_to_db, db 
+from model import GiveOffer, GetRequest, PostComment, Age, Income, Gender, SexOr, Race, User, Post, Picture, PostCategory, Category, Message, Following, connect_to_db, db 
 import random
 import datetime
 
@@ -110,17 +110,46 @@ def home_menu():
     """Displays user's homepage and menu of user options."""
 
     if 'logged_in' in session:
-        username = session.get('logged_in')
-        user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
-        user_post_objs = Post.query.filter_by(user_id=user_id).all()
-        get_request_objs = GetRequest.query.filter_by(user_requested=User.query.filter_by(username=session.get('logged_in')).first()).all()
-        # print "are these all the get_request_objs for this user???", get_request_objs
+        user_obj = User.query.filter_by(username=session.get("logged_in")).first()
+        user_id = user_obj.user_id
+        user_post_objs = Post.query.filter_by(user_id=user_id).all() 
+        # all the posts made by logged in user
+        # user_post_ids = [user_post_obj.post_id for user_post_obj in user_post_objs] 
+        requests_on_each_post = [user_post_obj.get_requests for user_post_obj in user_post_objs]
+        unseen_request_objs = []
+        for requests_on_post in requests_on_each_post:
+            for each_request in requests_on_post:
+                if each_request.is_seen == False:
+                    unseen_request_objs.append(each_request)
+        offers_on_each_post = [user_post_obj.give_offers for user_post_obj in user_post_objs]
+        unseen_offer_objs = []
+        for offers_on_post in offers_on_each_post:
+            for each_offer in offers_on_post:
+                if each_offer.is_seen == False:
+                    unseen_offer_objs.append(each_request)
+        post_comment_objs_per_post = [user_post.comments for user_post in user_post_objs] 
+        # this is a list of lists [[comment objs on each post]]
+        unseen_post_comment_objs = [] # a single list of ALL unseen commments for a particular user
+        for post_comments_on_obj in post_comment_objs_per_post:
+            for comment in post_comments_on_obj:
+                if comment.is_seen == False:
+                    unseen_post_comment_objs.append(comment)
+        num_notifications = len(unseen_offer_objs + unseen_post_comment_objs + unseen_request_objs)
         num_gives = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == True])
-        num_gets = len([get_request_obj for get_request_obj in get_request_objs if get_request_obj.request_approved == True])
+        num_gets = len([get_request_obj for get_request_obj in user_obj.get_requests if get_request_obj.request_approved == True])
         user_score = calculate_user_score(num_gives, num_gets)
-        return render_template("homepage.html", user_score=user_score, num_gives=num_gives, num_gets=num_gets)
+        # post_ids_w_requests = [user_post_obj.post_id for user_post_obj in user_post_objs if len(user_post_obj.get_requests) > 0]
+        return render_template("homepage.html", user_score=user_score, num_gives=num_gives, num_gets=num_gets,
+                                num_notifications=num_notifications, unseen_requests=unseen_request_objs,
+                                unseen_comments=unseen_post_comment_objs, unseen_offers=unseen_offer_objs)
     else: 
         return redirect("/login_form")
+
+# @app.route("/render_notifications")
+# def render_notifications():
+#     """Renders the notifications to display on user homepage."""
+
+
 
 @app.route("/user_interest")
 def user_choice():
@@ -199,29 +228,31 @@ def browse_posts():
 
     return render_template("browse.html", post_type=post_type, get_post_objs=get_post_objs, give_post_objs=give_post_objs, match_give_objs=match_give_objs)
 
-@app.route("/browse_all")
-def browse_all():
-    """Allows users to browse all give posts."""
+# @app.route("/browse_all")
+# def browse_all():
+#     """Allows users to browse all give posts."""
 
-    return render_template("browse.html", post_type=None, give_post_objs=Post.query.filter_by(is_give=True).all())
+#     return render_template("browse.html", post_type=None, give_post_objs=Post.query.filter_by(is_give=True).all())
 
 @app.route("/post/post_id/<int:post_id>")
 def user_posting(post_id):
-    """Displays each individual page for a user's post."""
-
-    user_posting_obj = Post.query.filter_by(post_id=post_id).first() 
-    #this should be the user posting that corresponds with the url post_id <from browse.html
-    post_comments = PostComment.query.filter_by(post_id=post_id).all()
-    # user_post = User.query.filter_by(username=session.get("logged_in")).first().posts
-    user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
-    user_post_objs = Post.query.filter_by(user_id=user_id).all()
-    get_request_objs = GetRequest.query.filter_by(user_requested=User.query.filter_by(username=session.get('logged_in')).first()).all()
-    num_gives = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == True])
-    num_gets = len([get_request_obj for get_request_obj in get_request_objs if get_request_obj.request_approved == True])
-    user_score = calculate_user_score(num_gives, num_gets)
+    """Displays each individual user posting that corresponds with the user's post ID."""
     
-    return render_template("user_posting.html", user_posting=user_posting_obj, post_comments=post_comments, 
-                            user_score=user_score)
+    user_posting_obj = Post.query.filter_by(post_id=post_id).first()
+    requests_on_post_objs = GetRequest.query.filter_by(post_id=post_id).all()
+    usernames_made_requests = [request.user_made_request.username for request in requests_on_post_objs]
+    user_score = None
+    if "logged_in" in session:
+        user_post_obj = User.query.filter_by(username=session.get('logged_in')).first()
+        user_post_objs = Post.query.filter_by(user_id=user_post_obj.user_id).all()
+        requests_made_by_user_objs = GetRequest.query.filter_by(user_made_request=user_post_obj).all()
+        # requests_on_each_post = [user_post_obj.get_requests for user_post_obj in user_post_objs]
+        num_gives = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == True])
+        num_gets = len([request_made_by_user for request_made_by_user in requests_made_by_user_objs if request_made_by_user.request_approved == True])
+        user_score = calculate_user_score(num_gives, num_gets)
+    
+    return render_template("user_posting.html", user_posting=user_posting_obj, 
+                            user_score=user_score, users_requested=usernames_made_requests)
 
 @app.route("/save_comment", methods=["POST"])
 def save_comment():
@@ -241,18 +272,35 @@ def save_comment():
 def make_get_request():
     """Saves a get request to the database."""
 
-    request_message = request.form.get("request_message")
+    message = request.form.get("message")
     post_id = request.form.get("post_id")
     post_obj = Post.query.filter_by(post_id=post_id).one()
-    post_user_obj = post_obj.user
-    requests_for_user_objs = post_obj.get_requests
+    # post_user_obj = post_obj.post_give_user
+    # requests_for_user_objs = post_obj.get_requests
     user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
-    request_message = GetRequest(post_id=post_id, user_id=user_id, time_requested=datetime.datetime.now(), 
-                                 request_message=request_message)
-    db.session.add(request_message)
+    message = GetRequest(post_id=post_id, user_id=user_id, time_requested=datetime.datetime.now(), 
+                        request_message=message)
+    db.session.add(message)
     db.session.commit()
 
     return jsonify({'results' : "Request Sent"})
+
+@app.route("/make_give_offer", methods=["POST"])
+def make_give_offer():
+    """Saves a give offer to the database."""
+
+    message = request.form.get("message")
+    post_id = request.form.get("post_id")
+    post_obj = Post.query.filter_by(post_id=post_id).one()
+    # post_user_obj = post_obj.post_give_user
+    # requests_for_user_objs = post_obj.get_requests
+    user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
+    message = GiveOffer(post_id=post_id, user_id=user_id, time_offered=datetime.datetime.now(), 
+                        offer_message=message)
+    db.session.add(message)
+    db.session.commit()
+
+    return jsonify({'results' : "Offer Sent"})
 
 # @app.route("/send_get_request", methods=["POST"])
 # def send_get_request():
@@ -280,7 +328,7 @@ def user_profile(username):
     print "these should be chronologically ordered user activity: ", all_user_activity_objs
 
     return render_template("user_profile.html", profile_user=profile_user_obj, 
-                            all_user_activity=all_user_activity_objs)
+                            all_user_activity=all_user_activity_objs, profile_user_posts=profile_user_post_objs)
 
 @app.route("/log_out")
 def log_out():

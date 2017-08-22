@@ -88,6 +88,7 @@ class Post(db.Model):
     __tablename__ = "posts"
 
     post_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    unique_id = db.Column(db.Integer, nullable=False, default=0)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     recipient_user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
     title = db.Column(db.String(50), nullable=True)
@@ -99,25 +100,59 @@ class Post(db.Model):
     # is_active = db.Column(db.Boolean(), nullable=False, default=True) # is this correct syntax for boolean?
     featured_img = db.Column(db.String(400), nullable=True)
 
+
+    # user = db.relationship('User', primaryjoin="Post.user, backref="posts")
     post_give_user = db.relationship('User', primaryjoin="Post.user_id==User.user_id", backref="posts")
-    post_get_user = db.relationship('User', primaryjoin="Post.recipient_user_id==User.user_id")
-    # user = db.relationship('User', backref="posts") # is this correct relationship to refer back to two FKs?
-    #categories = db.relationship('Category', secondary="post_categories", backref="posts")
+    # this is the user obj who made the posting for the item to give away
+    post_get_user = db.relationship('User', primaryjoin="Post.recipient_user_id==User.user_id") 
+    # this is the user obj who is approved to get the item posted
 
 class GetRequest(db.Model):
-    """Each individual get request on a user give posting."""
+    """Each individual get request on a user's give posting."""
 
     __tablename__ = "get_requests"
 
     request_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.post_id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    # user_received_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=Fal)
     time_requested = db.Column(db.DateTime, nullable=False)
     request_message = db.Column(db.String(1000), nullable=True)
+    is_seen = db.Column(db.Boolean(), nullable=False, default=False)
     request_approved = db.Column(db.Boolean(), nullable=False, default=False)
 
     post = db.relationship('Post', backref="get_requests")
-    user_requested = db.relationship('User', backref="get_requests")
+    user_made_request = db.relationship('User', foreign_keys=[user_id], backref="get_requests") #backref=db.backref("get_requests"), primaryjoin="get_requests.user_id==users.user_id")
+
+    @property
+    def user_received_request(self):
+        post_w_request = Post.query.filter_by(post_id=self.post_id).first()
+        user_id_on_post = post_w_request.user_id
+        return User.query.filter_by(user_id=user_id_on_post).first()
+
+class GiveOffer(db.Model):
+    """Each individual give offer on a user's get posting."""
+
+    __tablename__ = "give_offers"
+
+    offer_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.post_id'), nullable=False)
+    user_made_offer_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    time_offered = db.Column(db.DateTime, nullable=False)
+    offer_message = db.Column(db.String(1000), nullable=True)
+    is_seen = db.Column(db.Boolean(), nullable=False, default=False)
+    # offer_approved = db.Column(db.Boolean(), nullable=False, default=False)  
+    post = db.relationship('Post', backref="give_offers")
+    user_made_offer = db.relationship('User', primaryjoin="GiveOffer.user_made_offer_id==User.user_id")
+
+    @property
+    def user_received_offer(self):
+        post_w_offer = Post.query.filter_by(post_id=self.post_id).first()
+        user_id_on_post = post_w_offer.user_id
+        return User.query.filter_by(user_id=user_id_on_post).first()
+
+    # def user_received_offer
+
 
 class Picture(db.Model):
     """Each picture associated with a post."""
@@ -182,12 +217,14 @@ class PostComment(db.Model):
     __tablename__ = "comments"
 
     comment_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    unique_id = db.Column(db.Integer, nullable=False, default=1)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.post_id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     time_posted = db.Column(db.DateTime, nullable=False)
     comment_body = db.Column(db.String(400), nullable=False)
+    is_seen = db.Column(db.Boolean(), nullable=False, default=False)
 
-    user = db.relationship('User', backref="comments")
+    user = db.relationship('User', backref="comments") # this refers to the user who MADE a comment
     post = db.relationship('Post', backref="comments")
 
 ##############################################################################
@@ -258,27 +295,27 @@ if __name__ == "__main__":
     app = Flask(__name__)
 
     connect_to_db(app)
-    db.drop_all()
-    db.create_all()
-    print "Connected to DB."
+    # db.drop_all()
+    # db.create_all()
+    # print "Connected to DB."
 
-    categories = ["Clothing", "Services", "Food", "Furniture", "Books", "Toys", "Electronics", "Vehicles"]
-    create_categories(categories)
+    # categories = ["Clothing", "Services", "Food", "Furniture", "Books", "Toys", "Electronics", "Vehicles"]
+    # create_categories(categories)
 
-    income_levs = ["", "Un/underemployed", "Under $30,000", "$30,000-$70,000", "$70,000-$100,000", "Over $100,000"]
-    create_incomes(income_levs)
+    # income_levs = ["", "Un/underemployed", "Under $30,000", "$30,000-$70,000", "$70,000-$100,000", "Over $100,000"]
+    # create_incomes(income_levs)
 
-    ages = ["", "18 or Under", "19-25", "25-35", "35-50", "50-65", "65 or Older"]
-    create_ages(ages)
+    # ages = ["", "18 or Under", "19-25", "25-35", "35-50", "50-65", "65 or Older"]
+    # create_ages(ages)
 
-    genders = ["", "Transmasculine", "Transfeminine", "Woman", "Man", "Genderqueer", "Agender", "Two-Spirit"]
-    create_genders(genders)
+    # genders = ["", "Transmasculine", "Transfeminine", "Woman", "Man", "Genderqueer", "Agender", "Two-Spirit"]
+    # create_genders(genders)
 
-    races = ["", "Black/African American", "Latino/a/x", "Pacific Islander", "Southeast Asian", 
-             "South Asian", "East Asian", "Native American", "White", "Mixed Race"]
-    create_races(races)
+    # races = ["", "Black/African American", "Latino/a/x", "Pacific Islander", "Southeast Asian", 
+    #          "South Asian", "East Asian", "Native American", "White", "Mixed Race"]
+    # create_races(races)
 
-    sex_ors = ["", "Queer", "Lesbian", "Gay", "Bisexual", "Pansexual", "Straight", "Asexual"]
-    create_sex_ors(sex_ors)
+    # sex_ors = ["", "Queer", "Lesbian", "Gay", "Bisexual", "Pansexual", "Straight", "Asexual"]
+    # create_sex_ors(sex_ors)
 
 

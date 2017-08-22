@@ -22,19 +22,31 @@ function postComment(evt) {
 
 $('#post_comment').on('submit', postComment);
 
-function makeGetRequest(evt) {
-	evt.preventDefault();
-	var request_message = $('#get_request').val();
+function makeGetRequest() {
+	var request_message = $('#message').val();
 	var post_id = $('#post_id').val();
 	var data = {'request_message' : request_message,
 				'post_id' : post_id};
 	$.post('/make_get_request', data, function (results) {
 			var disable_request = $('#get_request').prop('disabled', true);
-			var request_receipt = $('#request_receipt').append("<h6>" + results['results'] + "</h6>");
+			var request_receipt = $('#sent_receipt').append("<h6>" + results['results'] + "</h6>");
 		})
 }
 
 $('#get_request').on('click', makeGetRequest);
+
+function makeGiveOffer() {
+	var request_message = $('#message').val();
+	var post_id = $('#post_id').val();
+	var data = {'message' : message,
+				'post_id' : post_id};
+	$.post('/make_give_offer', data, function (results) {
+			var disable_button = $('#give_offer').prop('disabled', true);
+			var request_receipt = $('#sent_receipt').append("<h6>" + results['results'] + "</h6>");
+		})
+}
+
+$('#give_offer').on('click', makeGiveOffer);
 
 // function receiveGetRequest() {
 // 	var post_id = $('#post_id').val();

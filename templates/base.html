@@ -44,6 +44,13 @@
         </div>
     {% endif %}
 
+    {% if 'logged_in' not in session %}
+        <form action="/new_user">
+            <input type="submit" value="Sign Up for Free!">
+            <br>
+            <h6><a href="/login_form">Already an existing user? Log in!</a></h6>
+        </form>
+    {% endif %}
     
     {% block content %}BODY CONTENT GOES HERE{% endblock %}
 

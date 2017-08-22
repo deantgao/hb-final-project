@@ -3,7 +3,41 @@
 
 {% block content %}
 	<h1>Welcome back, {{ session['logged_in'] }}!</h1>
-		<p>You have made a total of {{ num_gives }} gives and {{ num_gets }} gets.<br>
+	<h3>You have <button id="notifications" name="notifications" type="submit" value="see_notifications">{{ num_notifications }}</button> new notifications!</h3>
+	<div id="unseen_notifications">
+		{% if unseen_requests|length > 0 %}
+			<div id="unseen_requests">
+				<b>New Get Requests!</b><br>
+				{% for unseen_request in unseen_requests %} 
+					<a href="/user_profile/{{ unseen_request.user_made_request.username }}">{{ unseen_request.user_made_request.username }}</a> made a get request with the message:<br>
+					{{ unseen_request.request_message }}<br>
+					Made on: <a id="post_w_request" href="/post/post_id/{{ unseen_request.post_id}}">OP (Original Post)</a> at {{ unseen_request.time_requested }}<br><br>
+				{% endfor %}
+			<br>
+			</div>
+		{% endif %}
+		{% if unseen_offers|length > 0 %}	
+			<div>
+			<b>New Give Offers on Your Posts!</b><br>
+			{% for unseen_offer in unseen_offers %}
+				<a href="/user_profile/{{ unseen_offer.user_made_offer.username }}">{{ unseen_comment.user_made_offer.username }}</a> made a give offer with the message: {{ unseen_offer.offer_message }}<br>
+				Made on: <a href="/post/post_id/{{ unseen_offer.post_id }}">OP (Original Post)</a> at {{ unseen_offer.time_offered }}<br><br>
+			{% endfor %}
+			</div>
+		{% endif %}
+		{% if unseen_comments|length > 0 %}
+			<div>
+				<b>New Comments on Your Posts:</b><br>
+				{% for unseen_comment in unseen_comments %}
+					<a href="/user_profile/{{ unseen_comment.user.username }}">{{ unseen_comment.user.username }}</a> commented:<br> 
+					{{ unseen_comment.comment_body }}<br>
+					Made on: <a href="/post/post_id/{{ unseen_comment.post_id }}">OP (Original Post)</a> at {{ unseen_comment.time_posted }}<br><br>
+				{% endfor %}
+			<br>
+			</div>
+		{% endif %}
+	</div>
+	<p>You have made a total of {{ num_gives }} gives and {{ num_gets }} gets.<br>
 	{% if user_score > 0 %}
 		<b>You have {{ user_score }} more gets until it's your turn to give!</b>
 	{% else %}
@@ -25,6 +59,38 @@
 			$('#get_button').prop('disabled', true);
 		}
 
+		function hideNotification() {
+			$('#unseen_notifications').hide()
+		}
+		
+
+		function toggleNotifications() {
+			$('#unseen_notifications').slideToggle()
+		}
+
+		$('#notifications').on('click', toggleNotifications)
+		hideNotification();
+
+		// function displayNotifications() {
+		// 	var request_type = $('#new_request').val();
+		// 	var user_made_request = $('#user_made_request').val();
+		// 	console.log(user_made_request)
+		// 	var request_message = "hi" //$('#request_message').val();
+
+		// 	$('#request_user').append(user_made_request)
+		// 	$('req_message').append(request_message)
+
+		// 	var comment_type = $('#new_comment').val();
+		// 	var user_made_comment = $('#user_made_comment').val();
+		// 	var comment_body = $('#comment_body').val();
+
+		// 	var offer_type = $('#new_offer').val();
+		// 	var user_made_offer = $('#user_made_offer').val();
+		// 	var offer_message = $('#offer_message').val();
+
+			
+		// }
+		// $('#notifications').on('click', displayNotifications)
 	</script>
 		
 {% endblock %}

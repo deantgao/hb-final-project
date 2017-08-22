@@ -11,7 +11,7 @@
 			{% if match_give_obj.title == None %}
 			Untitled by user: {{ match_give_obj.user.username }}</a><br>
 			{% else %} 
-			{{ match_give_obj.title }} by user: {{ match_give_obj.user.username }}</a><br> 
+			{{ match_give_obj.title }} by user: {{ match_give_obj.post_give_user.username }}</a><br> 
 			{% endif %}
 		{% endfor %}
 			<br>
