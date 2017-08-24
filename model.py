@@ -90,7 +90,7 @@ class Post(db.Model):
     post_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     unique_id = db.Column(db.Integer, nullable=False, default=0)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    recipient_user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
+    recipient_user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True, default=None)
     title = db.Column(db.String(50), nullable=True)
     description = db.Column(db.String(1000), nullable=False)
     latitude = db.Column(db.String(100), nullable=True) #should these be strings?
@@ -100,11 +100,9 @@ class Post(db.Model):
     # is_active = db.Column(db.Boolean(), nullable=False, default=True) # is this correct syntax for boolean?
     featured_img = db.Column(db.String(400), nullable=True)
 
-
-    # user = db.relationship('User', primaryjoin="Post.user, backref="posts")
-    post_give_user = db.relationship('User', primaryjoin="Post.user_id==User.user_id", backref="posts")
-    # this is the user obj who made the posting for the item to give away
-    post_get_user = db.relationship('User', primaryjoin="Post.recipient_user_id==User.user_id") 
+    author = db.relationship('User', primaryjoin="Post.user_id==User.user_id", backref="posts")
+    # this is the user obj who authored the posting
+    recipient = db.relationship('User', primaryjoin="Post.recipient_user_id==User.user_id", backref="gets") 
     # this is the user obj who is approved to get the item posted
 
 class GetRequest(db.Model):
@@ -119,7 +117,6 @@ class GetRequest(db.Model):
     time_requested = db.Column(db.DateTime, nullable=False)
     request_message = db.Column(db.String(1000), nullable=True)
     is_seen = db.Column(db.Boolean(), nullable=False, default=False)
-    request_approved = db.Column(db.Boolean(), nullable=False, default=False)
 
     post = db.relationship('Post', backref="get_requests")
     user_made_request = db.relationship('User', foreign_keys=[user_id], backref="get_requests") #backref=db.backref("get_requests"), primaryjoin="get_requests.user_id==users.user_id")

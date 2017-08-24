@@ -3,37 +3,76 @@
 
 {% block content %}
 	<h1>Welcome back, {{ session['logged_in'] }}!</h1>
-	<h3>You have <button id="notifications" name="notifications" type="submit" value="see_notifications">{{ num_notifications }}</button> new notifications!</h3>
-	<div id="unseen_notifications">
-		{% if unseen_requests|length > 0 %}
-			<div id="unseen_requests">
-				<b>New Get Requests!</b><br>
-				{% for unseen_request in unseen_requests %} 
-					<a href="/user_profile/{{ unseen_request.user_made_request.username }}">{{ unseen_request.user_made_request.username }}</a> made a get request with the message:<br>
-					{{ unseen_request.request_message }}<br>
-					Made on: <a id="post_w_request" href="/post/post_id/{{ unseen_request.post_id}}">OP (Original Post)</a> at {{ unseen_request.time_requested }}<br><br>
+	<h3>You have <button id="new_notifications" name="notifications" type="submit" value="see_notifications">{{ num_notifications }}</button> new notifications!</h3>
+	<div id="notifications">
+		{% if all_requests|length > 0 %}
+			<div id="requests">
+				<b>Get Requests on Your Posts:</b><br>
+				{% for one_request in all_requests %} 
+					<div class="each_get_request {{ one_request.post_id }}">
+						{% if one_request.is_seen == False %}
+							<div class="unseen"><i>New!</i></div>
+						{% endif %}
+						<div id="{{ one_request.request_id }}" 
+							{% if one_request.is_seen == False %}
+								class="unseen request"
+							{% else %}
+								class="seen request"
+							{% endif %}
+						>
+							<a href="/user_profile/{{ one_request.user_made_request.username }}">{{ one_request.user_made_request.username }}</a> made a get request with the message:<br>
+							{{ one_request.request_message }}<br>
+							Made on: <a id="post_w_request" href="/post/post_id/{{ one_request.post_id}}">{{ one_request.post.title }}</a> at {{ one_request.time_requested }}<br><br>
+						</div>
+						<button class="approve_request" name="approve" type="submit" data-request-id="{{ one_request.request_id }}" data-post-id="{{ one_request.post_id }}">Approve THIS Request for post: {{ one_request.post.title }}</button><br>
+					</div>
+					<!-- this is in working condition that hides all of the requests made on a post once that post has been approved to a particular user -->
+					<!-- it works by way of  -->
 				{% endfor %}
 			<br>
 			</div>
 		{% endif %}
-		{% if unseen_offers|length > 0 %}	
-			<div>
-			<b>New Give Offers on Your Posts!</b><br>
-			{% for unseen_offer in unseen_offers %}
-				<a href="/user_profile/{{ unseen_offer.user_made_offer.username }}">{{ unseen_comment.user_made_offer.username }}</a> made a give offer with the message: {{ unseen_offer.offer_message }}<br>
-				Made on: <a href="/post/post_id/{{ unseen_offer.post_id }}">OP (Original Post)</a> at {{ unseen_offer.time_offered }}<br><br>
-			{% endfor %}
+		{% if all_offers|length > 0 %}	
+			<div id="unseen_offer">
+				<b>Give Offers on Your Posts:</b><br>
+				{% for offer in all_offers %} 
+						{% if offer.is_seen == True %}
+							<div id="{{ offer.offer_id }}" class="seen offer">
+								<a href="/user_profile/{{ offer.user_made_offer.username }}">{{ request.user_made_request.username }}</a> made a give offer with the message:<br>
+								{{ offer.offer_message }}<br>
+								Made on: <a id="post_w_offer" href="/post/post_id/{{ offer.post_id}}">{{ offer.post.title }}</a> at {{ offer.time_offered }}<br><br>
+							</div>
+						{% elif offer.is_seen == False %}
+							<div><i>New!</i></div>
+							<div id="{{ offer.offer_id }}" class="unseen offer">
+								<a href="/user_profile/{{ offer.user_made_offer.username }}">{{ request.user_made_request.username }}</a> made a get request with the message:<br>
+								{{ offer.offer_message }}<br>
+								Made on: <a id="post_w_offer" href="/post/post_id/{{ offer.post_id}}">{{ offer.post.title }}</a> at {{ offer.time_offered }}<br><br>
+							</div>
+						{% endif %}
+				{% endfor %}
 			</div>
 		{% endif %}
-		{% if unseen_comments|length > 0 %}
-			<div>
-				<b>New Comments on Your Posts:</b><br>
-				{% for unseen_comment in unseen_comments %}
-					<a href="/user_profile/{{ unseen_comment.user.username }}">{{ unseen_comment.user.username }}</a> commented:<br> 
-					{{ unseen_comment.comment_body }}<br>
-					Made on: <a href="/post/post_id/{{ unseen_comment.post_id }}">OP (Original Post)</a> at {{ unseen_comment.time_posted }}<br><br>
+		{% if all_comments|length > 0 %}
+			<div id="unseen_comment">
+				<b>Comments on Your Posts:</b><br>
+				{% for comment in all_comments %}
+					{% if comment.is_seen == True %}
+							<div id="{{ comment.comment_id }}" class="seen comment">
+								<a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a> made a comment:<br>
+								{{ comment.comment_body }}<br>
+								Made on: <a id="post_w_comment" href="/post/post_id/{{ comment.post_id}}">{{ comment.post.title }}</a> at {{ comment.time_posted }}<br><br>
+							</div>
+						{% elif comment.is_seen == False %}
+							<div><i>New!</i></div>
+							<div id="{{ comment.comment_id }}" class="unseen comment">
+								<a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a> made a comment:<br>
+								{{ comment.comment_body }}<br>
+								Made on: <a id="post_w_comment" href="/post/post_id/{{ comment.post_id}}">{{ comment.post.title }}</a> at {{ comment.time_posted }}<br><br>
+							</div>
+					{% endif %}
 				{% endfor %}
-			<br>
+				<br>
 			</div>
 		{% endif %}
 	</div>
@@ -51,6 +90,8 @@
 	</form>
 
 	<script>
+		$('#notifications').hide();
+
 		var user_score = $('#user_score').val();
 		if (user_score < 1) {
 			disable_get();
@@ -59,38 +100,49 @@
 			$('#get_button').prop('disabled', true);
 		}
 
-		function hideNotification() {
-			$('#unseen_notifications').hide()
+		function toggleNotifications() {
+			$('#notifications').slideToggle();
+		}
+
+		$('#new_notifications').on('click', toggleNotifications);
+
+		function approveGetRequest() {
+			var requestId = $(this).data('requestId');
+			var postId = $(this).data('postId');
+			var data = {request_id : requestId};
+			$.post('/approve_request', data, function (results) {
+				var requestDivs = $("." + postId);
+				requestDivs.hide();
+			});
 		}
 		
+		$('.approve_request').on('click', approveGetRequest);
 
-		function toggleNotifications() {
-			$('#unseen_notifications').slideToggle()
+		function markAsSeen() {
+			var data = {}
+			var clicked_div = $(this)
+			var num_notifications = $('#new_notifications').html();
+			$('#new_notifications').html(num_notifications - 1)
+			console.log(num_notifications)
+			if ($(this).hasClass("comment")) {
+				data['notification_type'] = "comment";
+			}
+			if ($(this).hasClass("request")) {
+				data['notification_type'] = "request";
+			}
+			if ($(this).hasClass("offer")) {
+				data['notification_type'] = "offer";
+			}
+			data["notification_id"] = $(this).attr("id");
+
+			$.post('/mark_notification_seen', data, function (results) {
+				clicked_div.removeClass("unseen");
+				clicked_div.addClass("seen");
+			})
 		}
 
-		$('#notifications').on('click', toggleNotifications)
-		hideNotification();
+		$('.unseen').on('click', markAsSeen)
 
-		// function displayNotifications() {
-		// 	var request_type = $('#new_request').val();
-		// 	var user_made_request = $('#user_made_request').val();
-		// 	console.log(user_made_request)
-		// 	var request_message = "hi" //$('#request_message').val();
-
-		// 	$('#request_user').append(user_made_request)
-		// 	$('req_message').append(request_message)
-
-		// 	var comment_type = $('#new_comment').val();
-		// 	var user_made_comment = $('#user_made_comment').val();
-		// 	var comment_body = $('#comment_body').val();
-
-		// 	var offer_type = $('#new_offer').val();
-		// 	var user_made_offer = $('#user_made_offer').val();
-		// 	var offer_message = $('#offer_message').val();
-
-			
-		// }
-		// $('#notifications').on('click', displayNotifications)
 	</script>
 		
 {% endblock %}

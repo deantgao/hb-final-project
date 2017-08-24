@@ -4,7 +4,7 @@
 {% block content %}
 	<h1>{{ user_posting.title }}</h1>
 		<input id="post_id" name="post_id" type="hidden" value="{{ user_posting.post_id }}">
-		by <a href="/user_profile/{{ user_posting.user.username }}">{{ user_posting.user.username }}</a><p id="post_date">{{ user_posting.post_date }}</p><br>
+		by <a href="/user_profile/{{ user_posting.author.username }}">{{ user_posting.author.username }}</a><p id="post_date">{{ user_posting.post_date }}</p><br>
 		<p id="post_description">{{ user_posting.description }}</p><br>
 		{% if 'logged_in' in session and user_score > 0 %}
 			<form id="post_comment" action="/save_comment" method="POST">
@@ -26,7 +26,7 @@
 					Get Request
 				{% elif user_posting.is_give == False %}
 					Give Offer
-				{% endif %} to <a href="/user_profile/{{ user_posting.post_give_user.username }}">{{ user_posting.post_give_user.username }}</a>:
+				{% endif %} to <a href="/user_profile/{{ user_posting.author.username }}">{{ user_posting.author.username }}</a>:
 			</div>
 			<textarea id="message" name="message" rows=3 columns=100>
 			</textarea><br>

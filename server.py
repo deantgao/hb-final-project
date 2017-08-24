@@ -105,51 +105,59 @@ def verify_user():
         flash("I'm sorry. That is an incorrect password. Please try again.")
         return redirect("/login_form")     
 
+# @app.route("/notifications/all.json")
+# def get_all_notification_data():
+
+#     notification_data = {"foo":"bar"}
+#     return jsonify(notification_data)
+
+
 @app.route("/user_home")
 def home_menu():
     """Displays user's homepage and menu of user options."""
 
     if 'logged_in' in session:
         user_obj = User.query.filter_by(username=session.get("logged_in")).first()
-        user_id = user_obj.user_id
-        user_post_objs = Post.query.filter_by(user_id=user_id).all() 
+        user_post_objs = Post.query.filter_by(user_id=user_obj.user_id).all() 
         # all the posts made by logged in user
-        # user_post_ids = [user_post_obj.post_id for user_post_obj in user_post_objs] 
         requests_on_each_post = [user_post_obj.get_requests for user_post_obj in user_post_objs]
-        unseen_request_objs = []
-        for requests_on_post in requests_on_each_post:
-            for each_request in requests_on_post:
-                if each_request.is_seen == False:
-                    unseen_request_objs.append(each_request)
+        unseen_request_objs, all_requests = get_notifications(requests_on_each_post)
+        all_requests.sort(key=lambda obj: obj.post_id)
         offers_on_each_post = [user_post_obj.give_offers for user_post_obj in user_post_objs]
-        unseen_offer_objs = []
-        for offers_on_post in offers_on_each_post:
-            for each_offer in offers_on_post:
-                if each_offer.is_seen == False:
-                    unseen_offer_objs.append(each_request)
+        unseen_offer_objs, all_offers = get_notifications(offers_on_each_post)
+        all_offers.sort(key=lambda obj: obj.post_id)
         post_comment_objs_per_post = [user_post.comments for user_post in user_post_objs] 
-        # this is a list of lists [[comment objs on each post]]
-        unseen_post_comment_objs = [] # a single list of ALL unseen commments for a particular user
-        for post_comments_on_obj in post_comment_objs_per_post:
-            for comment in post_comments_on_obj:
-                if comment.is_seen == False:
-                    unseen_post_comment_objs.append(comment)
+        unseen_post_comment_objs, all_comments = get_notifications(post_comment_objs_per_post) # a single list of ALL unseen commments for a particular user
+        all_comments.sort(key=lambda obj: obj.post_id)
         num_notifications = len(unseen_offer_objs + unseen_post_comment_objs + unseen_request_objs)
         num_gives = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == True])
         num_gets = len([get_request_obj for get_request_obj in user_obj.get_requests if get_request_obj.request_approved == True])
         user_score = calculate_user_score(num_gives, num_gets)
-        # post_ids_w_requests = [user_post_obj.post_id for user_post_obj in user_post_objs if len(user_post_obj.get_requests) > 0]
+    
         return render_template("homepage.html", user_score=user_score, num_gives=num_gives, num_gets=num_gets,
-                                num_notifications=num_notifications, unseen_requests=unseen_request_objs,
-                                unseen_comments=unseen_post_comment_objs, unseen_offers=unseen_offer_objs)
+                                num_notifications=num_notifications, all_requests=all_requests,
+                                all_offers=all_offers, all_comments=all_comments) 
     else: 
         return redirect("/login_form")
 
-# @app.route("/render_notifications")
-# def render_notifications():
-#     """Renders the notifications to display on user homepage."""
+@app.route("/mark_notification_seen", methods=["POST"])
+def mark_notification_seen():
+    # will need notifification type and id to get from ajax
 
+    notification_type = request.form.get("notification_type")
+    notification_id = request.form.get("notification_id")
 
+    if notification_type == "comment":
+        query = PostComment.query.filter_by(comment_id=notification_id).first()
+    elif notification_type == "offer":
+        query = GiveOffer.query.filter_by(offer_id=notification_id).first()
+    elif notification_type == "request":   
+        query = GetRequest.query.filter_by(request_id=notification_id).first()
+
+    query.is_seen = True
+    db.session.commit()
+
+    return "success"
 
 @app.route("/user_interest")
 def user_choice():
@@ -240,7 +248,7 @@ def user_posting(post_id):
     
     user_posting_obj = Post.query.filter_by(post_id=post_id).first()
     requests_on_post_objs = GetRequest.query.filter_by(post_id=post_id).all()
-    usernames_made_requests = [request.user_made_request.username for request in requests_on_post_objs]
+    usernames_made_requests = [requests_on_post.user_made_request.username for requests_on_post in requests_on_post_objs]
     user_score = None
     if "logged_in" in session:
         user_post_obj = User.query.filter_by(username=session.get('logged_in')).first()
@@ -275,7 +283,7 @@ def make_get_request():
     message = request.form.get("message")
     post_id = request.form.get("post_id")
     post_obj = Post.query.filter_by(post_id=post_id).one()
-    # post_user_obj = post_obj.post_give_user
+    # post_user_obj = post_obj.author
     # requests_for_user_objs = post_obj.get_requests
     user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
     message = GetRequest(post_id=post_id, user_id=user_id, time_requested=datetime.datetime.now(), 
@@ -292,7 +300,7 @@ def make_give_offer():
     message = request.form.get("message")
     post_id = request.form.get("post_id")
     post_obj = Post.query.filter_by(post_id=post_id).one()
-    # post_user_obj = post_obj.post_give_user
+    # post_user_obj = post_obj.author
     # requests_for_user_objs = post_obj.get_requests
     user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
     message = GiveOffer(post_id=post_id, user_id=user_id, time_offered=datetime.datetime.now(), 
@@ -302,19 +310,18 @@ def make_give_offer():
 
     return jsonify({'results' : "Offer Sent"})
 
-# @app.route("/send_get_request", methods=["POST"])
-# def send_get_request():
-#     """Sends request and message to user of posting."""
+@app.route("/approve_request", methods=["POST"])
+def approve_request():
+    """After a user approves one request on their post, marks the post as 
+    no longer active and removes the posting."""
 
-#     request_message = request.form.get("request_message")
-#     post_id = request.form.get("post_id")
-#     post_obj = Post.query.filter_by(post_id=post_id).one()
-#     post_user_obj = post_obj.user
-#     requests_for_user_objs = post_obj.get_requests
-#     user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
+    request_id = request.form.get("request_id")
+    approved_request = GetRequest.query.filter_by(request_id=request_id).first()
+    approved_post = approved_request.post
+    approved_post.recipient_user_id = approved_request.user_id
+    db.session.commit()
 
-#     return render_template("/user_home", )
-
+    return jsonify({'results' : request_id})
 
 @app.route("/user_profile/<username>")
 def user_profile(username):
@@ -341,7 +348,18 @@ def log_out():
 ###############################################################
 # Helper functions 
 
-# create a function to calculate users' getting and giving scores   
+def get_notifications(notifications_on_each_post):
+    # user_obj = User.query.filter_by(username=session.get("logged_in")).first()
+    # user_post_objs = Post.query.filter_by(user_id=user_obj.user_id).all()
+    unseen_notifications_of_type = []
+    all_notifications_of_type = []
+    for notifications in notifications_on_each_post:
+        for notification in notifications:
+            if notification.is_seen == False:
+                unseen_notifications_of_type.append(notification)
+            all_notifications_of_type.append(notification)
+    return (unseen_notifications_of_type, all_notifications_of_type)
+
 def calculate_user_score(num_gives, num_gets):
     """Calculates user score for getting and giving."""
     score = 5
