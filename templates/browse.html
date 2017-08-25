@@ -19,6 +19,21 @@
 		<h1>Welcome to the browsing section, {{ session['logged_in'] }}! What would you like to see today?</h1>
 	{% endif %}
 {% endif %}
+<h4>Filter Search By:</h4>
+<form id="filter" action="/filter_search">
+	Post Type of Interest:<input class="type" type="radio" name="post_type" value="give">Give
+						  <input class="type" type="radio" name="post_type" value="get">Get
+						  <input class="type" type="radio" name="post_type" value="all">All<br>
+	Location by address:<input name="location" id="location_search" type="text"><br>
+	Keyword:<input name="keyword" id="keyword_search" type="text"><br>
+	Category Type(s):<br>
+	{% for category in categories %}
+		<input type="checkbox" name="category" value="{{category.category_id}}" class="category">{{category.category_name}}<br>
+	{% endfor %}
+	<input id="filter_search" type="submit" value="Filter My Search!">
+</form>
+
+
 <h4>Here are all the give posts:</h4>
 {% for give_post in give_post_objs %}
 	<span><a href="/post/post_id/{{ give_post.post_id }}">{{ give_post.title }}</a></span><br>
@@ -27,5 +42,28 @@
 {% for get_post in get_post_objs %}
 	<span><a href="/post/post_id/{{ get_post.post_id }}">{{ get_post.title }}</a></span><br>
 {% endfor %}
+
+<script>
+
+function filterSearch(evt) {
+	evt.preventDefault();
+	var postType = $('.type').val();
+	console.log(postType);
+	var keyword = $('#keyword_search').val();
+	var categories = $('input:checked').map(function () {
+	     return $(this).val(); 
+	 }).get(); //.serialize();
+	console.log(categories)
+	var data = {post_type : postType,
+				keyword : keyword,
+				categories : categories};
+	$.get("/filter_search", data, function(results) {
+
+	})
+}
+
+$('#filter').on('submit', filterSearch);
+
+</script>
 		
 {% endblock %}

@@ -8,29 +8,33 @@
 		{% if all_requests|length > 0 %}
 			<div id="requests">
 				<b>Get Requests on Your Posts:</b><br>
-				{% for one_request in all_requests %} 
-					<div class="each_get_request {{ one_request.post_id }}">
-						{% if one_request.is_seen == False %}
-							<div class="unseen"><i>New!</i></div>
-						{% endif %}
-						<div id="{{ one_request.request_id }}" 
-							{% if one_request.is_seen == False %}
-								class="unseen request"
-							{% else %}
-								class="seen request"
-							{% endif %}
-						>
-							<a href="/user_profile/{{ one_request.user_made_request.username }}">{{ one_request.user_made_request.username }}</a> made a get request with the message:<br>
-							{{ one_request.request_message }}<br>
-							Made on: <a id="post_w_request" href="/post/post_id/{{ one_request.post_id}}">{{ one_request.post.title }}</a> at {{ one_request.time_requested }}<br><br>
-						</div>
-						<button class="approve_request" name="approve" type="submit" data-request-id="{{ one_request.request_id }}" data-post-id="{{ one_request.post_id }}">Approve THIS Request for post: {{ one_request.post.title }}</button><br>
+				{% for one_post in requests_per_post if one_post.get_requests|length > 0 %}
+					<div class="each_post_w_requests {{ one_post.post_id }}">
+						<h3><a href="/post/post_id/{{ one_post.post_id }}">{{ one_post.title }}</a></h3>
+						{% for one_request in one_post.get_requests %}
+							<div class="each_get_request {{ one_request.post_id }}">
+								{% if one_request.is_seen == False %}
+									<div class="unseen"><i>New!</i></div>
+								{% endif %}
+								<div id="{{ one_request.request_id }}" 
+									{% if one_request.is_seen == False %}
+										class="unseen request"
+									{% else %}
+										class="seen request"
+									{% endif %}
+								>
+									<a href="/user_profile/{{ one_request.user_made_request.username }}">{{ one_request.user_made_request.username }}</a> made a get request with the message:<br>
+									{{ one_request.request_message }}<br>
+									Made on: <a id="post_w_request" href="/post/post_id/{{ one_request.post_id}}">{{ one_request.post.title }}</a> at {{ one_request.time_requested }}<br><br>
+								</div>
+								<button class="approve_request" name="approve" type="submit" data-request-id="{{ one_request.request_id }}" data-post-id="{{ one_request.post_id }}">Approve THIS Request for post: {{ one_request.post.title }}</button><br>
+							</div>
+						{% endfor %}
+							<button class="undo_approve" name="undo" type="submit" data-undo-id="{{ one_post.post_id }}">Undo Approve Request for post {{ one_post.title }}</button><br>
 					</div>
-					<!-- this is in working condition that hides all of the requests made on a post once that post has been approved to a particular user -->
-					<!-- it works by way of  -->
 				{% endfor %}
+			</div> 
 			<br>
-			</div>
 		{% endif %}
 		{% if all_offers|length > 0 %}	
 			<div id="unseen_offer">
@@ -58,18 +62,18 @@
 				<b>Comments on Your Posts:</b><br>
 				{% for comment in all_comments %}
 					{% if comment.is_seen == True %}
-							<div id="{{ comment.comment_id }}" class="seen comment">
-								<a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a> made a comment:<br>
-								{{ comment.comment_body }}<br>
-								Made on: <a id="post_w_comment" href="/post/post_id/{{ comment.post_id}}">{{ comment.post.title }}</a> at {{ comment.time_posted }}<br><br>
-							</div>
-						{% elif comment.is_seen == False %}
-							<div><i>New!</i></div>
-							<div id="{{ comment.comment_id }}" class="unseen comment">
-								<a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a> made a comment:<br>
-								{{ comment.comment_body }}<br>
-								Made on: <a id="post_w_comment" href="/post/post_id/{{ comment.post_id}}">{{ comment.post.title }}</a> at {{ comment.time_posted }}<br><br>
-							</div>
+						<div id="{{ comment.comment_id }}" class="seen comment">
+							<a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a> made a comment:<br>
+							{{ comment.comment_body }}<br>
+							Made on: <a id="post_w_comment" href="/post/post_id/{{ comment.post_id}}">{{ comment.post.title }}</a> at {{ comment.time_posted }}<br><br>
+						</div>
+					{% elif comment.is_seen == False %}
+						<div><i>New!</i></div>
+						<div id="{{ comment.comment_id }}" class="unseen comment">
+							<a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a> made a comment:<br>
+							{{ comment.comment_body }}<br>
+							Made on: <a id="post_w_comment" href="/post/post_id/{{ comment.post_id}}">{{ comment.post.title }}</a> at {{ comment.time_posted }}<br><br>
+						</div>
 					{% endif %}
 				{% endfor %}
 				<br>
@@ -91,6 +95,7 @@
 
 	<script>
 		$('#notifications').hide();
+		$('.undo_approve').hide();
 
 		var user_score = $('#user_score').val();
 		if (user_score < 1) {
@@ -109,14 +114,31 @@
 		function approveGetRequest() {
 			var requestId = $(this).data('requestId');
 			var postId = $(this).data('postId');
+			console.log(postId);
 			var data = {request_id : requestId};
 			$.post('/approve_request', data, function (results) {
-				var requestDivs = $("." + postId);
+				var requestDivs = $(".each_get_request." + postId);
 				requestDivs.hide();
+				$('.undo_approve[data-undo-id=' + postId + ']' ).show();
 			});
 		}
 		
 		$('.approve_request').on('click', approveGetRequest);
+
+		function undoApprove() {
+			// $('.undo_approve[data-undo-id=' + postId + ']' ).hide();
+			$(this).hide();
+			console.log("everything is undone");
+			var postId = $(this).data('undoId');
+			var data = {post_id : postId};
+			$.post('/undo_approve_request', data, function (results) {
+				console.log(results['results'])
+				var requestDivs = $("." + postId);
+				requestDivs.show();
+			});
+		}
+
+		$('.undo_approve').on('click', undoApprove);
 
 		function markAsSeen() {
 			var data = {}
@@ -146,3 +168,26 @@
 	</script>
 		
 {% endblock %}
+
+<!-- {# <div class="each_get_request {{ one_request.post_id }}">
+						{% if one_request.is_seen == False %}
+							<div class="unseen"><i>New!</i></div>
+						{% endif %}
+						<div id="{{ one_request.request_id }}" 
+							{% if one_request.is_seen == False %}
+								class="unseen request"
+							{% else %}
+								class="seen request"
+							{% endif %}
+						>
+							<a href="/user_profile/{{ one_request.user_made_request.username }}">{{ one_request.user_made_request.username }}</a> made a get request with the message:<br>
+							{{ one_request.request_message }}<br>
+							Made on: <a id="post_w_request" href="/post/post_id/{{ one_request.post_id}}">{{ one_request.post.title }}</a> at {one_request.time_requested }}<br><br>
+						</div>
+						<button class="approve_request" name="approve" type="submit" data-request-id="{{ one_request.request_id }}" data-post-id="{{ one_request.post_id }}">Approve THIS Request for post: {{ one_request.post.title }}</button><br>
+					</div> #} -->
+					<!-- this is in working condition that hides all of the requests made on a post once that post has been approved to a particular user -->
+					<!-- it works by way of  JS selecting the request ID that is then returned to Flask where the database is updated with post.recipient_id is no longer None. the JS callback function then hides all the divs associated with that posting selecting for them by a class that is the post id.-->
+					<!-- this should, however, be changed on the flask side that passes in all the requests grouped by post in a dictionary {post_id : [requests on post]} to make it much easier to select the requests associated with a post in order to "undo" a request approval-->
+				<!-- 
+				 -->

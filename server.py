@@ -120,9 +120,12 @@ def home_menu():
         user_obj = User.query.filter_by(username=session.get("logged_in")).first()
         user_post_objs = Post.query.filter_by(user_id=user_obj.user_id).all() 
         # all the posts made by logged in user
+        requests_per_post = {}
+        for user_post_obj in user_post_objs:
+            requests_per_post[user_post_obj] = user_post_obj.get_requests
         requests_on_each_post = [user_post_obj.get_requests for user_post_obj in user_post_objs]
         unseen_request_objs, all_requests = get_notifications(requests_on_each_post)
-        all_requests.sort(key=lambda obj: obj.post_id)
+        # all_requests.sort(key=lambda obj: obj.post_id)
         offers_on_each_post = [user_post_obj.give_offers for user_post_obj in user_post_objs]
         unseen_offer_objs, all_offers = get_notifications(offers_on_each_post)
         all_offers.sort(key=lambda obj: obj.post_id)
@@ -131,12 +134,11 @@ def home_menu():
         all_comments.sort(key=lambda obj: obj.post_id)
         num_notifications = len(unseen_offer_objs + unseen_post_comment_objs + unseen_request_objs)
         num_gives = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == True])
-        num_gets = len([get_request_obj for get_request_obj in user_obj.get_requests if get_request_obj.request_approved == True])
+        num_gets = len([get_request_obj.post_id for get_request_obj in user_obj.get_requests if get_request_obj.post.recipient_user_id == user_obj.user_id])
         user_score = calculate_user_score(num_gives, num_gets)
-    
         return render_template("homepage.html", user_score=user_score, num_gives=num_gives, num_gets=num_gets,
-                                num_notifications=num_notifications, all_requests=all_requests,
-                                all_offers=all_offers, all_comments=all_comments) 
+                                num_notifications=num_notifications, requests_per_post=requests_per_post,
+                                all_requests=all_requests, all_offers=all_offers, all_comments=all_comments) 
     else: 
         return redirect("/login_form")
 
@@ -218,12 +220,15 @@ def browse_posts():
         # post is a tuple with (post_id, [category ids for post])
         return set(post[1]) & set(get_category_ids)
 
+    categories = Category.query.all()
     post_type = request.form.get("post_type")
     get_category_objs = request.form.getlist("post_category")
-    get_category_ids = [int(get_category_obj) for get_category_obj in get_category_objs] # 
-    give_post_objs = Post.query.filter_by(is_give=True).all()
-    get_post_objs = Post.query.filter_by(is_give=False).all()
-    give_category_ids = [(give_post_obj.post_id, [post_category.category_id for post_category in give_post_obj.post_categories]) for give_post_obj in give_post_objs]
+    get_category_ids = [int(get_category_obj) for get_category_obj in get_category_objs] 
+    active_give_post_objs = Post.query.filter_by(is_give=True, recipient_user_id=None).all()
+    active_get_post_objs = Post.query.filter_by(is_give=False, recipient_user_id=None).all()
+    give_category_ids = [(give_post_obj.post_id, [post_category.category_id for 
+                          post_category in give_post_obj.post_categories]) for 
+                          give_post_obj in active_give_post_objs]
     gives_match_gets = filter(filter_post_by_category, give_category_ids) # a list of tuples (post_id number, [post_category ids where get matches give])
     give_post_ids = []
     for give_match_get in gives_match_gets:
@@ -234,33 +239,87 @@ def browse_posts():
     # iterates over a list and passes in each item to the preceding function as "post")
     match_give_objs = [Post.query.filter_by(post_id=give_post_id).first() for give_post_id in give_post_ids]
 
-    return render_template("browse.html", post_type=post_type, get_post_objs=get_post_objs, give_post_objs=give_post_objs, match_give_objs=match_give_objs)
+    return render_template("browse.html", categories=categories, post_type=post_type, get_post_objs=active_get_post_objs, 
+                            give_post_objs=active_give_post_objs, match_give_objs=match_give_objs)
 
-# @app.route("/browse_all")
-# def browse_all():
-#     """Allows users to browse all give posts."""
 
-#     return render_template("browse.html", post_type=None, give_post_objs=Post.query.filter_by(is_give=True).all())
+@app.route("/filter_search")
+def filter_search():
+    """Filters a user search by some combination of keyword, location, and/or selected category(ies)."""
+
+    keyword = request.args.get("keyword")
+    post_type = request.args.get("post_type")
+    if post_type == "give":
+        posts_match_keyword = filter_by_keyword(keyword, True)
+    elif post_type == "get":
+        posts_match_keyword = filter_by_keyword(keyword, False)
+    else:
+        posts_match_keyword = filter_by_keyword(keyword, None)
+    print "this should be all the post objs for a matching post: ", posts_match_keyword
+
+    category_ids = request.args.getlist("categories[]")
+    print "these should be whatevs were selected categories", category_ids
+
+    def filter_by_categories():
+        """Returns all the posts that match selected categories."""
+
+        categories = Category.query.all()
+        get_category_objs = request.form.getlist("post_category")
+        get_category_ids = [int(get_category_obj) for get_category_obj in get_category_objs] 
+        active_give_post_objs = Post.query.filter_by(is_give=True, recipient_user_id=None).all()
+        active_get_post_objs = Post.query.filter_by(is_give=False, recipient_user_id=None).all()
+        give_category_ids = [(give_post_obj.post_id, [post_category.category_id for 
+                              post_category in give_post_obj.post_categories]) for 
+                              give_post_obj in active_give_post_objs]
+        gives_match_gets = filter(filter_post_by_category, give_category_ids) # a list of tuples (post_id number, [post_category ids where get matches give])
+        give_post_ids = []
+        for give_match_get in gives_match_gets:
+            give_post_id, match_category_ids = give_match_get
+            give_post_ids.append(give_post_id)
+        # filter(takes in a function that passes in each item in the proceeding list and discards any "false-y" comparisons (ie where
+        #the set(is empty), 
+        # iterates over a list and passes in each item to the preceding function as "post")
+        match_give_objs = [Post.query.filter_by(post_id=give_post_id).first() for give_post_id in give_post_ids]
+
 
 @app.route("/post/post_id/<int:post_id>")
 def user_posting(post_id):
     """Displays each individual user posting that corresponds with the user's post ID."""
+
+    #write logic to check if the post has a recipient
+    #if post.recipient_user_id and post.author_id != current user and session['logged_in'] != :
+        # flash "no longer active"
+        # redirect browse
     
     user_posting_obj = Post.query.filter_by(post_id=post_id).first()
     requests_on_post_objs = GetRequest.query.filter_by(post_id=post_id).all()
-    usernames_made_requests = [requests_on_post.user_made_request.username for requests_on_post in requests_on_post_objs]
+    usernames_made_requests = [requests_on_post.user_made_request.username for requests_on_post 
+                               in requests_on_post_objs]
+    requests_on_post_objs = GetRequest.query.filter_by(post_id=post_id).all()
     user_score = None
-    if "logged_in" in session:
+
+    if "logged_in" not in session:
+        flash("This posting is no longer active.")
+        return redirect("/browse")
+    elif "logged_in" in session:
         user_post_obj = User.query.filter_by(username=session.get('logged_in')).first()
         user_post_objs = Post.query.filter_by(user_id=user_post_obj.user_id).all()
-        requests_made_by_user_objs = GetRequest.query.filter_by(user_made_request=user_post_obj).all()
-        # requests_on_each_post = [user_post_obj.get_requests for user_post_obj in user_post_objs]
-        num_gives = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == True])
-        num_gets = len([request_made_by_user for request_made_by_user in requests_made_by_user_objs if request_made_by_user.request_approved == True])
-        user_score = calculate_user_score(num_gives, num_gets)
-    
-    return render_template("user_posting.html", user_posting=user_posting_obj, 
-                            user_score=user_score, users_requested=usernames_made_requests)
+        # requests_made_by_user_objs = GetRequest.query.filter_by(user_made_request=user_post_obj).all()
+        if user_posting_obj.recipient_user_id and user_posting_obj.author.username != session["logged_in"] and session["logged_in"] != user_posting_obj.recipient.username:
+            flash("This posting is no longer active.")
+            return redirect("/browse")
+        elif user_posting_obj.recipient_user_id and user_posting_obj.author.username == session["logged_in"]:
+            flash("You have approved someone to claim this item. Here is the original posting.")
+        elif user_posting_obj.recipient_user_id and session["logged_in"] == user_posting_obj.recipient.username:
+            flash("You have been approved to get this item! Here is the original posting.")
+        else:
+            num_gives = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == True])
+            num_gets = len([request_made_by_user for request_made_by_user in user_post_obj.get_requests if request_made_by_user.post.recipient_user_id != None])
+            # num_gets = len([request_made_by_user for request_made_by_user in requests_made_by_user_objs if request_made_by_user.request_approved == True])
+            user_score = calculate_user_score(num_gives, num_gets)
+        
+        return render_template("user_posting.html", user_posting=user_posting_obj, 
+                                user_score=user_score, users_requested=usernames_made_requests)
 
 @app.route("/save_comment", methods=["POST"])
 def save_comment():
@@ -323,6 +382,17 @@ def approve_request():
 
     return jsonify({'results' : request_id})
 
+@app.route("/undo_approve_request", methods=["POST"])
+def undo_approve():
+    """Removes recipient ID on a post where the get approval has been undone."""
+
+    post_id = request.form.get("post_id")
+    undone_approve_post = Post.query.filter_by(post_id=post_id).first()
+    undone_approve_post.recipient_user_id = None
+    db.session.commit()
+
+    return jsonify({'results' : "post is now active"})
+
 @app.route("/user_profile/<username>")
 def user_profile(username):
     """Displays individual user's profile page with their user activity."""
@@ -348,9 +418,25 @@ def log_out():
 ###############################################################
 # Helper functions 
 
+def filter_by_keyword(keyword, post_type):
+    """Returns all active posts that match  a keyword search."""
+
+    descr_per_post = {}
+    if post_type is None:
+        active_posts = Post.query.filter_by(recipient_user_id=None).all()
+    else:
+        active_posts = Post.query.filter_by(is_give=post_type, recipient_user_id=None).all()
+    for post in active_posts:
+        descr_per_post[post] = post.description
+    posts_match_keyword = []
+    for item in descr_per_post.items():
+        if keyword in item[1]:
+            posts_match_keyword.append(item[0])
+    return posts_match_keyword
+
 def get_notifications(notifications_on_each_post):
-    # user_obj = User.query.filter_by(username=session.get("logged_in")).first()
-    # user_post_objs = Post.query.filter_by(user_id=user_obj.user_id).all()
+    """Calculates all the notifications for a single user."""
+
     unseen_notifications_of_type = []
     all_notifications_of_type = []
     for notifications in notifications_on_each_post:
