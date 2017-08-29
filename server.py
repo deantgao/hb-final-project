@@ -2,6 +2,7 @@ from flask import Flask, redirect, request, render_template, session, flash, jso
 # from flask_debugtoolbar import DebugToolbarExtension
 from jinja2 import StrictUndefined
 from model import GiveOffer, GetRequest, PostComment, Age, Income, Gender, SexOr, Race, User, Post, Picture, PostCategory, Category, Message, Following, connect_to_db, db 
+from sqlalchemy import distinct
 import random
 import datetime
 
@@ -194,6 +195,7 @@ def confirm_post():
     # import pdb; pdb.set_trace()
     user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
     sel_categories = request.form.getlist('category')
+    print "what do THESE selected categories look like...? : ", sel_categories
     category_objs = db.session.query(Category).filter(Category.category_id.in_(sel_categories)).all()
     
     post_type = request.form.get("post_type")
@@ -229,14 +231,18 @@ def browse_posts():
     give_category_ids = [(give_post_obj.post_id, [post_category.category_id for 
                           post_category in give_post_obj.post_categories]) for 
                           give_post_obj in active_give_post_objs]
-    gives_match_gets = filter(filter_post_by_category, give_category_ids) # a list of tuples (post_id number, [post_category ids where get matches give])
+    # give_category_ids returns eg: [(2, [5, 6]), (3, [3]), (4, [1, 2, 3])] 
+    # -> list of tuples: [(post id, [list of category ids for that post]), (,[])]
+    gives_match_gets = filter(filter_post_by_category, give_category_ids) 
+    # a list of tuples (post_id number, [post_category ids where get matches give])
+    # filter(takes in a function that passes in each item in the proceeding list and discards any "false-y" comparisons 
+    # (ie where the set(is empty), 
+    # iterates over a list and passes in each item to the preceding function as "post")
+    # in this case, takes in a list of post ids
     give_post_ids = []
     for give_match_get in gives_match_gets:
         give_post_id, match_category_ids = give_match_get
         give_post_ids.append(give_post_id)
-    # filter(takes in a function that passes in each item in the proceeding list and discards any "false-y" comparisons (ie where
-    #the set(is empty), 
-    # iterates over a list and passes in each item to the preceding function as "post")
     match_give_objs = [Post.query.filter_by(post_id=give_post_id).first() for give_post_id in give_post_ids]
 
     return render_template("browse.html", categories=categories, post_type=post_type, get_post_objs=active_get_post_objs, 
@@ -249,38 +255,32 @@ def filter_search():
 
     keyword = request.args.get("keyword")
     post_type = request.args.get("post_type")
-    if post_type == "give":
-        posts_match_keyword = filter_by_keyword(keyword, True)
+    address = request.args.get("address") 
+    category_ids = request.args.getlist("categories[]")[1:]
+
+    results = Post.query
+    if post_type == "give":    
+        results = results.filter(Post.is_give==True) 
     elif post_type == "get":
-        posts_match_keyword = filter_by_keyword(keyword, False)
-    else:
-        posts_match_keyword = filter_by_keyword(keyword, None)
-    print "this should be all the post objs for a matching post: ", posts_match_keyword
+        results = results.filter(Post.is_give==False)
+    if keyword:    
+        results = results.filter(Post.description.ilike("%" + keyword + "%")) 
+    results = results.all()
+    print "these should be all post objs: ", results
+    if category_ids:
+        category_ids = set(int(cat_id) for cat_id in category_ids)
+        results = [result for result in results if set(category_ids) 
+                   & set([post_category.category_id for post_category in result.post_categories])]
+    results = [result.serialize for result in results]
+    print "what the f are these????", results
 
-    category_ids = request.args.getlist("categories[]")
-    print "these should be whatevs were selected categories", category_ids
-
-    def filter_by_categories():
-        """Returns all the posts that match selected categories."""
-
-        categories = Category.query.all()
-        get_category_objs = request.form.getlist("post_category")
-        get_category_ids = [int(get_category_obj) for get_category_obj in get_category_objs] 
-        active_give_post_objs = Post.query.filter_by(is_give=True, recipient_user_id=None).all()
-        active_get_post_objs = Post.query.filter_by(is_give=False, recipient_user_id=None).all()
-        give_category_ids = [(give_post_obj.post_id, [post_category.category_id for 
-                              post_category in give_post_obj.post_categories]) for 
-                              give_post_obj in active_give_post_objs]
-        gives_match_gets = filter(filter_post_by_category, give_category_ids) # a list of tuples (post_id number, [post_category ids where get matches give])
-        give_post_ids = []
-        for give_match_get in gives_match_gets:
-            give_post_id, match_category_ids = give_match_get
-            give_post_ids.append(give_post_id)
-        # filter(takes in a function that passes in each item in the proceeding list and discards any "false-y" comparisons (ie where
-        #the set(is empty), 
-        # iterates over a list and passes in each item to the preceding function as "post")
-        match_give_objs = [Post.query.filter_by(post_id=give_post_id).first() for give_post_id in give_post_ids]
-
+    return jsonify({'results' : results})
+    #     gives_match_gets = filter(filter_post_by_category, give_category_ids) 
+    #     # a list of tuples (post_id number, [post_category ids where get matches give])
+    #     # filter(takes in a function that passes in each item in the proceeding list and discards any "false-y" comparisons (ie where
+    #     #the set(is empty), 
+    #     # iterates over a list and passes in each item to the preceding function as "post")
+    #     return posts_for_sel_categories
 
 @app.route("/post/post_id/<int:post_id>")
 def user_posting(post_id):
@@ -418,20 +418,18 @@ def log_out():
 ###############################################################
 # Helper functions 
 
-def filter_by_keyword(keyword, post_type):
-    """Returns all active posts that match  a keyword search."""
+def filter_by_keyword(keyword=None, post_type=None):
+    """Returns all active posts that match   a keyword search."""
 
-    descr_per_post = {}
     if post_type is None:
-        active_posts = Post.query.filter_by(recipient_user_id=None).all()
+        active_posts = Post.query.filter_by(recipient_user_id=None)
     else:
-        active_posts = Post.query.filter_by(is_give=post_type, recipient_user_id=None).all()
-    for post in active_posts:
-        descr_per_post[post] = post.description
-    posts_match_keyword = []
-    for item in descr_per_post.items():
-        if keyword in item[1]:
-            posts_match_keyword.append(item[0])
+        active_posts = Post.query.filter_by(is_give=post_type, recipient_user_id=None)
+    if keyword:
+        posts_match_keyword = [post for post in active_posts if keyword in post.description]
+    else:
+        posts_match_keyword = active_posts
+
     return posts_match_keyword
 
 def get_notifications(notifications_on_each_post):

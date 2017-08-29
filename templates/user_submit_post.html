@@ -8,13 +8,15 @@
 		<h1>{{ get_compliment }}, {{ session['logged_in'] }}!</h1>
 	{% endif %}
 		
-	<form id="confirm_post" action="/confirm_post" method="POST">Please select the category(ies) that your 
-	{% if user_interest == "give" %}
-		giving
-	{% else %}
-		getting
-	{% endif %}
-	post matches:<br>
+	<form id="confirm_post" action="/confirm_post" method="POST">
+	Please indicate the approximate location of your item by address:<input name="location" id="location_search" type="text"><br>
+		Please select the category(ies) that your 
+		{% if user_interest == "give" %}
+			giving
+		{% else %}
+			getting
+		{% endif %}
+		post matches:<br>
 		{% for category in categories %}
 			<input type="checkbox" name="category" value="{{category.category_id}}" class="category">{{category.category_name}}<br>
 		{% endfor %}

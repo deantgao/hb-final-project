@@ -42,6 +42,15 @@ class User(db.Model):
                                         primaryjoin="User.user_id==Following.user_following",
                                         secondaryjoin="User.user_id==Following.user_followed") # these could be separate tables(?)
 
+    @property
+    def serialize(self):
+        """Returns dictionary of data for user object."""
+        return {
+            "user_id": self.user_id,
+            "username": self.username,
+            "email": self.email,
+        }
+
 class Income(db.Model):
     """Each user income type."""
 
@@ -105,6 +114,22 @@ class Post(db.Model):
     recipient = db.relationship('User', primaryjoin="Post.recipient_user_id==User.user_id", backref="gets") 
     # this is the user obj who is approved to get the item posted
 
+    @property
+    def serialize(self):
+        """Returns dictionary of data for post object."""
+        return {
+            "post_id": self.post_id,
+            "unique_id": self.unique_id,
+            "user_id": self.user_id,
+            "recipient_user_id": self.recipient_user_id,
+            "title": self.title,
+            "description": self.description,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "post_date": self.post_date.strftime("%Y-%m-%d"),
+            "author": self.author.serialize
+        }
+        
 class GetRequest(db.Model):
     """Each individual get request on a user's give posting."""
 

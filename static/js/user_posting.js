@@ -1,15 +1,3 @@
-// $('#saveButton').on('click', function() {
-// 			var disabled_value = $('.category').prop('disabled');
-// 			$('.category').prop('disabled', !disabled_value);
-// 		});
-
-// $('#saveButton').on('click', function() {
-
-// $('#editButton').hide()
-
-// 	$('#editButton').on('click', function() {
-// 			var enabled_value = $('.category').prop('disabled', false);
-// 		});
 function postComment(evt) {
 	evt.preventDefault();
 	var comment = $('#comment_body').val();

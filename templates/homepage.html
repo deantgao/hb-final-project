@@ -27,7 +27,7 @@
 									{{ one_request.request_message }}<br>
 									Made on: <a id="post_w_request" href="/post/post_id/{{ one_request.post_id}}">{{ one_request.post.title }}</a> at {{ one_request.time_requested }}<br><br>
 								</div>
-								<button class="approve_request" name="approve" type="submit" data-request-id="{{ one_request.request_id }}" data-post-id="{{ one_request.post_id }}">Approve THIS Request for post: {{ one_request.post.title }}</button><br>
+								<button class="approve_request" name="approve" type="submit" data-request-id="{{ one_request.request_id }}" data-post-id="{{ one_request.post_id }}">Approve THIS Request for post: {{ one_request.post.title }}</button><br><br>
 							</div>
 						{% endfor %}
 							<button class="undo_approve" name="undo" type="submit" data-undo-id="{{ one_post.post_id }}">Undo Approve Request for post {{ one_post.title }}</button><br>
@@ -47,7 +47,7 @@
 								Made on: <a id="post_w_offer" href="/post/post_id/{{ offer.post_id}}">{{ offer.post.title }}</a> at {{ offer.time_offered }}<br><br>
 							</div>
 						{% elif offer.is_seen == False %}
-							<div><i>New!</i></div>
+							<div class="unseen"><i>New!</i></div>
 							<div id="{{ offer.offer_id }}" class="unseen offer">
 								<a href="/user_profile/{{ offer.user_made_offer.username }}">{{ request.user_made_request.username }}</a> made a get request with the message:<br>
 								{{ offer.offer_message }}<br>
@@ -68,7 +68,7 @@
 							Made on: <a id="post_w_comment" href="/post/post_id/{{ comment.post_id}}">{{ comment.post.title }}</a> at {{ comment.time_posted }}<br><br>
 						</div>
 					{% elif comment.is_seen == False %}
-						<div><i>New!</i></div>
+						<div class="unseen"><i>New!</i></div>
 						<div id="{{ comment.comment_id }}" class="unseen comment">
 							<a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a> made a comment:<br>
 							{{ comment.comment_body }}<br>
@@ -128,7 +128,6 @@
 		function undoApprove() {
 			// $('.undo_approve[data-undo-id=' + postId + ']' ).hide();
 			$(this).hide();
-			console.log("everything is undone");
 			var postId = $(this).data('undoId');
 			var data = {post_id : postId};
 			$.post('/undo_approve_request', data, function (results) {
@@ -160,6 +159,7 @@
 			$.post('/mark_notification_seen', data, function (results) {
 				clicked_div.removeClass("unseen");
 				clicked_div.addClass("seen");
+				$(".unseen").hide();
 			})
 		}
 
