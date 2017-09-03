@@ -10,22 +10,32 @@
 				{% for match_give_obj in match_give_objs %}
 					<a href="/post/post_id/{{ match_give_obj.post_id }}">
 					{% if match_give_obj.title == None %}
-					Untitled by user: {{ match_give_obj.user.username }}</a><br>
+						Untitled by user: {{ match_give_obj.user.username }}</a><br>
 					{% else %} 
-					{{ match_give_obj.title }} by user: {{ match_give_obj.author.username }}</a><br> 
+						{{ match_give_obj.title }} by user: {{ match_give_obj.author.username }}</a><br> 
 					{% endif %}
 				{% endfor %}
 					<br>
 			{% else %}
 				<h1>Welcome to the browsing section, {{ session['logged_in'] }}! What would you like to see today?</h1>
 			{% endif %}
+	{% endif %}
 			<h4>Filter Search By:</h4>
 			<form id="filter" action="/filter_search">
 				Post Type of Interest:<input class="type" type="radio" name="post_type" value="give">Give
 									  <input class="type" type="radio" name="post_type" value="get">Get
-									  <input class="type" type="radio" name="post_type" value="all" checked="checked">All<br>
-				Location by address:<input name="location" id="location_search" type="text"><br>
-				Keyword:<input name="keyword" id="keyword_search" type="text"><br>
+									  <input class="type" type="radio" name="post_type" value="all" checked="checked">All<br><br>
+				Within <select id="miles" name="distance">
+						<option value="0"></option>
+						<option value="1">1</option>
+						<option value="5">5</option>
+						<option value="10">10</option>
+						<option value="20">20</option>
+					   </select> miles of<br>
+				Location by address: <input name="location" id="location_search" type="text"><br><br>
+				<input type="hidden" name="latitude" id="input_lat"> 
+				<input type="hidden" name="longitude" id="input_lng">
+				Keyword: <input name="keyword" id="keyword_search" type="text"><br><br>
 				Category Type(s):<br>
 				{% for category in categories %}
 					<input type="checkbox" name="category" value="{{category.category_id}}" class="category">{{category.category_name}}<br>
@@ -35,8 +45,8 @@
 		</div>
 		<div id="post_filter">
 			<h1>Here are all of the posts that match your interests:</h1>
+			<div id="map"></div>
 		</div>
-	{% endif %}
 <!-- 
 	<h4>Here are all the give posts:</h4>
 	{% for give_post in give_post_objs %}
@@ -46,38 +56,235 @@
 	{% for get_post in get_post_objs %}
 		<span><a href="/post/post_id/{{ get_post.post_id }}">{{ get_post.title }}</a></span><br>
 	{% endfor %} -->
+	<!-- <script type="text/javascript" src="/static/js/browse_google_maps.js"></script> -->
+	<script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js">
+   </script>
+	<script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB_O7Jr3xSkDiw0fRVrAIM4CMafgPwtFtQ">
+    </script>
 
 	<script>
-
 	$('#post_filter').hide();
+	$(window).on('load', function() {
+	    locatePostings();
+	});
+	
+	var geocoder;
+
+	function locatePostings() {
+		console.log('ran');
+		geocoder = new google.maps.Geocoder();
+	}
+
+	function geocodeAddress(geocoder, address) {
+		$('#input_lat').val("");
+		$('#input_lng').val("");
+		geocoder.geocode({address : address}, function(results, status) {
+			if (status === "OK") {
+				updateLatLngOnForm(results[0].geometry.location);
+			}else{
+				console.log("location not found");
+			} 
+		});
+	}
+
+	function updateLatLngOnForm(location) {
+		$('#input_lat').val(location.lat());
+		$('#input_lng').val(location.lng());
+	}
+
+	$('#location_search').on('blur', function () {
+		geocodeAddress(geocoder, $('#location_search').val());
+	});
+
+	// function filterSearch(evt) {
+	//  	evt.preventDefault();
+	//  	$('#pre_filter').hide();
+	//  	$('#post_filter').show();
+	//  	var givenMiles = $('#miles').val();
+	//  	var latitude = $('#input_lat').val();
+	//  	var longitude = $('#input_lng').val();
+	//  	var postType = $('input[name=post_type]:checked').val();
+	//  	console.log(postType);
+	//  	var keyword = $('#keyword_search').val();
+	//  	var address = $('#location_search').val();
+	//  	var categories = $('input:checked').map(function () {
+	//  	     return $(this).val(); 
+	//  	 }).get(); // upon second look - no idea what the preceding actually does
+	//  	console.log(categories)
+	//  	var data = {given_miles : givenMiles,
+	//  				latitude : latitude,
+	//  				longitude : longitude,
+	//  				post_type : postType,
+	//  				keyword : keyword,
+	//  				categories : categories};
+	//  	$.get("/filter_search", data, function(results) {
+	//  		console.log(results['results']);
+	//  		var postings = results['results'];
+	//  		for (posting of postings) {
+	//  			$('#post_filter').append("<span>" + "<a href='/post/post_id/" + posting.post_id + "'>" + posting.title + "</a>" + "</span>" + "<br>");
+	//  		}
+	//  	})
+	// }
 
 	function filterSearch(evt) {
 		evt.preventDefault();
+		console.log('is this getting thru?');
 		$('#pre_filter').hide();
 		$('#post_filter').show();
+		var givenMiles = $('#miles').val();
+		console.log(givenMiles);
+		var latitude = $('#input_lat').val();
+		console.log(latitude);
+		var longitude = $('#input_lng').val();
 		var postType = $('.type').val();
 		var keyword = $('#keyword_search').val();
 		var address = $('#location_search').val();
 		var categories = $('input:checked').map(function () {
-		     return $(this).val(); 
-		 }).get(); // upon second look - no idea what the preceding actually does
-		console.log(categories)
-		var data = {post_type : postType,
-					keyword : keyword,
-					categories : categories};
-		$.get("/filter_search", data, function(results) {
-			console.log(results['results']);
+		    return $(this).val(); 
+		    }).get(); // upon second look - no idea what the preceding actually does
+		console.log(categories);
+		var data = {given_miles : givenMiles,
+		        	latitude : latitude,
+		        	longitude : longitude,
+		        	post_type : postType,
+		        	keyword : keyword,
+		        	categories : categories};
+		var whenResultsReady = function(results) {
 			var postings = results['results'];
-			for (posting of postings) {
-				console.log(posting);
-				console.log(posting.title);
-				$('#post_filter').append("<span>" + "<a href='/post/post_id/" + posting.post_id + "'>" + posting.title + "</a>" + "</span>" + "<br>");
-			}
-		})
+			console.log(postings);
+	    	var map = new google.maps.Map(document.getElementById('map'), {
+	      		zoom: 3,
+	      		center: {lat: parseFloat(latitude), lng: parseFloat(longitude)}
+	    	});
+	    	var labels = postings.map(function(x) {return x.title});
+	    // [for (posting of postings) posting.title];
+	    	console.log(labels);
+	    	var locations = postings.map(function(x) {return {lat: x.latitude, lng: x.longitude}}); 
+	    	var markers = locations.map(function(location, i) {
+	      	return new google.maps.Marker({position: location,
+	        							   label: labels[i]});
+	    	});
+	    	var markerCluster = new MarkerClusterer(map, markers,
+	        {imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'});
+		};
+		$.get("/filter_search", data, whenResultsReady);
+	}
+	// $('#filter_search').on('click', filterSearch);
+	</script>
+	<script>
+		$('#filter_search').on('click', filterSearch);
+	</script>
+	<!-- <script>
+	$('#post_filter').hide();
+	$(window).on('load', function() {
+	    locatePostings();
+	});
+	function locatePostings() {
+		console.log('ran');
+		var geocoder = new google.maps.Geocoder();
+		function geocodeAddress(geocoder, address) {
+			$('#input_lat').val("");
+			$('#input_lng').val("");
+			geocoder.geocode({address : address}, function(results, status) {
+				if (status === "OK") {
+					updateLatLngOnForm(results[0].geometry.location);
+				}else{
+					console.log("location not found");
+				} 
+			});
+		}
+
+		function updateLatLngOnForm(location) {
+			$('#input_lat').val(location.lat());
+			$('#input_lng').val(location.lng());
+		}
+
+		$('#location_search').on('blur', function () {
+			geocodeAddress(geocoder, $('#location_search').val());
+		});
 	}
 
-	$('#filter').on('submit', filterSearch);
+	function filterSearch(evt) {
+		  evt.preventDefault();
+		  console.log('is this getting thru?');
+		  $('#pre_filter').hide();
+		  $('#post_filter').show();
+		  var givenMiles = $('#miles').val();
+		  console.log(givenMiles);
+		  var latitude = $('#input_lat').val();
+		  console.log(latitude);
+		  var longitude = $('#input_lng').val();
+		  var postType = $('.type').val();
+		  var keyword = $('#keyword_search').val();
+		  var address = $('#location_search').val();
+		  var categories = $('input:checked').map(function () {
+		       return $(this).val(); 
+		   }).get(); // upon second look - no idea what the preceding actually does
+		  console.log(categories);
+		  var data = {given_miles : givenMiles,
+		        latitude : latitude,
+		        longitude : longitude,
+		        post_type : postType,
+		        keyword : keyword,
+		        categories : categories};
+		  $.get("/filter_search", data, function(results) {
+		    var postings = results['results'];
+		    var map = new google.maps.Map(document.getElementById('map'), {
+		      zoom: 3,
+		      center: {lat: latitude, lng: longitude}
+		    });
+		    var labels = postings.map(function(x) {return x.title});
+		    // [for (posting of postings) posting.title];
+		    console.log(labels);
+		    var markers = locations.map(function(location, i) {
+		      return new google.maps.Marker({
+		        position: location,
+		        label: labels[i % labels.length]
+		      });
+		    });
 
-	</script>
+		    var markerCluster = new MarkerClusterer(map, markers,
+		        {imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'});
+		  }
+		  	var locations = postings.map(function(x) {return {lat: x.latitude, lng: x.longitude}}); 
+		  	// [for (posting.latitude of postings) for (posting.longitude of postings) {lat: posting.latitude, lng: posting.longitude}];
+		}
+
+	$('#filter').on('submit', filterSearch);
+	</script> -->
+
+	<!-- function filterSearch(evt) {
+	 	evt.preventDefault();
+	 	$('#pre_filter').hide();
+	 	$('#post_filter').show();
+	 	console.log("what's not happening here?");
+	 	var givenMiles = $('#miles').val();
+	 	var latitude = $('#input_lat').val();
+	 	var longitude = $('#input_lng').val();
+	 	var postType = $('.type').val();
+	 	var keyword = $('#keyword_search').val();
+	 	var address = $('#location_search').val();
+	 	var categories = $('input:checked').map(function () {
+	 	     return $(this).val(); 
+	 	 }).get(); // upon second look - no idea what the preceding actually does
+	 	console.log(categories)
+	 	var data = {given_miles : givenMiles,
+	 				latitude : latitude,
+	 				longitude : longitude,
+	 				post_type : postType,
+	 				keyword : keyword,
+	 				categories : categories};
+	 	$.get("/filter_search", data, function(results) {
+	 		console.log(results['results']);
+	 		var postings = results['results'];
+	 		for (posting of postings) {
+	 			$('#post_filter').append("<span>" + "<a href='/post/post_id/" + posting.post_id + "'>" + posting.title + "</a>" + "</span>" + "<br>");
+	 		}
+	 	})
+	} -->
+
+	<!-- $('#filter').on('submit', filterSearch); -->
+	
 		
 {% endblock %}

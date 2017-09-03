@@ -25,7 +25,7 @@
 								>
 									<a href="/user_profile/{{ one_request.user_made_request.username }}">{{ one_request.user_made_request.username }}</a> made a get request with the message:<br>
 									{{ one_request.request_message }}<br>
-									Made on: <a id="post_w_request" href="/post/post_id/{{ one_request.post_id}}">{{ one_request.post.title }}</a> at {{ one_request.time_requested }}<br><br>
+									Made on: <a id="post_w_request" href="/post/post_id/{{ one_request.post_id}}">{{ one_request.post.title }}</a> at {{ format_date(one_request.time_requested) }}<br><br>
 								</div>
 								<button class="approve_request" name="approve" type="submit" data-request-id="{{ one_request.request_id }}" data-post-id="{{ one_request.post_id }}">Approve THIS Request for post: {{ one_request.post.title }}</button><br><br>
 							</div>
@@ -42,16 +42,16 @@
 				{% for offer in all_offers %} 
 						{% if offer.is_seen == True %}
 							<div id="{{ offer.offer_id }}" class="seen offer">
-								<a href="/user_profile/{{ offer.user_made_offer.username }}">{{ request.user_made_request.username }}</a> made a give offer with the message:<br>
+								<a href="/user_profile/{{ offer.user_made_offer.username }}">{{ offer.user_made_offer.username }}</a> made a give offer with the message:<br>
 								{{ offer.offer_message }}<br>
-								Made on: <a id="post_w_offer" href="/post/post_id/{{ offer.post_id}}">{{ offer.post.title }}</a> at {{ offer.time_offered }}<br><br>
+								Made on: <a id="post_w_offer" href="/post/post_id/{{ offer.post_id}}">{{ offer.post.title }}</a> at {{ format_date(offer.time_offered) }}<br><br>
 							</div>
 						{% elif offer.is_seen == False %}
 							<div class="unseen"><i>New!</i></div>
 							<div id="{{ offer.offer_id }}" class="unseen offer">
-								<a href="/user_profile/{{ offer.user_made_offer.username }}">{{ request.user_made_request.username }}</a> made a get request with the message:<br>
+								<a href="/user_profile/{{ offer.user_made_offer.username }}">{{ offer.user_made_offer.username }}</a> made a give offer with the message:<br>
 								{{ offer.offer_message }}<br>
-								Made on: <a id="post_w_offer" href="/post/post_id/{{ offer.post_id}}">{{ offer.post.title }}</a> at {{ offer.time_offered }}<br><br>
+								Made on: <a id="post_w_offer" href="/post/post_id/{{ offer.post_id}}">{{ offer.post.title }}</a> at {{ format_date(offer.time_offered) }}<br><br>
 							</div>
 						{% endif %}
 				{% endfor %}
@@ -65,14 +65,14 @@
 						<div id="{{ comment.comment_id }}" class="seen comment">
 							<a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a> made a comment:<br>
 							{{ comment.comment_body }}<br>
-							Made on: <a id="post_w_comment" href="/post/post_id/{{ comment.post_id}}">{{ comment.post.title }}</a> at {{ comment.time_posted }}<br><br>
+							Made on: <a id="post_w_comment" href="/post/post_id/{{ comment.post_id}}">{{ comment.post.title }}</a> at {{ format_date(comment.time_posted) }}<br><br>
 						</div>
 					{% elif comment.is_seen == False %}
 						<div class="unseen"><i>New!</i></div>
 						<div id="{{ comment.comment_id }}" class="unseen comment">
 							<a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a> made a comment:<br>
 							{{ comment.comment_body }}<br>
-							Made on: <a id="post_w_comment" href="/post/post_id/{{ comment.post_id}}">{{ comment.post.title }}</a> at {{ comment.time_posted }}<br><br>
+							Made on: <a id="post_w_comment" href="/post/post_id/{{ comment.post_id}}">{{ comment.post.title }}</a> at {{ format_date(comment.time_posted) }}<br><br>
 						</div>
 					{% endif %}
 				{% endfor %}
@@ -140,10 +140,9 @@
 		$('.undo_approve').on('click', undoApprove);
 
 		function markAsSeen() {
-			var data = {}
-			var clicked_div = $(this)
+			var data = {};
+			var clicked_div = $(this);
 			var num_notifications = $('#new_notifications').html();
-			$('#new_notifications').html(num_notifications - 1)
 			console.log(num_notifications)
 			if ($(this).hasClass("comment")) {
 				data['notification_type'] = "comment";
@@ -159,6 +158,7 @@
 			$.post('/mark_notification_seen', data, function (results) {
 				clicked_div.removeClass("unseen");
 				clicked_div.addClass("seen");
+				$('#new_notifications').html(results['results'])
 				$(".unseen").hide();
 			})
 		}

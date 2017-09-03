@@ -1,3 +1,7 @@
+$("#submit_post").on('click', function() {
+	var disable_button = $('#submit_post').prop('disabled', false);
+});
+
 // $('#saveButton').on('click', function() {
 // 			var disabled_value = $('.category').prop('disabled');
 // 			$('.category').prop('disabled', !disabled_value);

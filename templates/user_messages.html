@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}User Messages Page{% endblock %}
+
+{% block content %}
+	<h3>Messages between you and {{ user_messaged.username }}:</h3>
+		<div id="messages">
+			{% for message in message_thread %}
+				<div class="message">
+					{{ message.message_body }} sent at {{ message.time_sent }} by 
+					{% if message.sender_id == user_messaged.user_id %}
+						{{ user_messaged.username }}
+					{% else %}
+						<i>you</i>
+					{% endif %}
+				</div>
+			{% endfor %}
+		</div>
+	<textarea id="message_body" rows=3 columns=100>
+	</textarea><br>
+		<button id="send_message" type="submit" value="get_request" data-recipient-id="{{ user_messaged.user_id }}">Send New Message</button>
+
+	<script>
+		function sendMessage() {
+			var messageBody = $('#message_body').val();
+			var recipientId = $(this).data('recipientId');
+			var data = {message_body : messageBody,
+						recipient_id : recipientId};
+			console.log(messageBody);
+			$.post("/save_message", data, function (results) {
+				console.log(results);
+				$('#messages').append("<div class='message'>" + messageBody + " sent at " + results['results'] + " by " + "<i> you</i>" + "</div>");
+			})
+		}
+
+		$('#send_message').on('click', sendMessage);
+	</script>	
+{% endblock %}

@@ -2,44 +2,53 @@
 {% block title %}User Posting{% endblock %}
 
 {% block content %}
-	<h1>{{ user_posting.title }}</h1>
-		<input id="post_id" name="post_id" type="hidden" value="{{ user_posting.post_id }}">
-		by <a href="/user_profile/{{ user_posting.author.username }}">{{ user_posting.author.username }}</a><p id="post_date">{{ user_posting.post_date }}</p><br>
-		<p id="post_description">{{ user_posting.description }}</p><br>
-		{% if 'logged_in' in session and user_score > 0 %}
-			<form id="post_comment" action="/save_comment" method="POST">
-				<textarea id="comment_body" name="comment" rows=3 columns=100>
-				</textarea><br>
-				<input id="submit_comment" type="submit" value="Post Comment">
-			</form><br>
-		{% endif %}
-		<h3>Comments on Posting:</h3>
-		{% for comment in user_posting.comments %}
-			<div>"{{ comment.comment_body }}" posted at: {{ comment.time_posted }} by user <a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a></div>
-		{% endfor %}
-		<div id="new_comment"></div><br>
-		
-		{% if session['logged_in'] not in users_requested %} 
-			<div>
-				Send a message with a 
-				{% if user_posting.is_give == True %}
-					Get Request
-				{% elif user_posting.is_give == False %}
-					Give Offer
-				{% endif %} to <a href="/user_profile/{{ user_posting.author.username }}">{{ user_posting.author.username }}</a>:
-			</div>
-			<textarea id="message" name="message" rows=3 columns=100>
-			</textarea><br>
-			{% if user_posting.is_give == True %}
-				<button id="get_request" name="request" type="submit" value="get_request">Make Get Request</button>
-			{% elif user_posting.is_give == False %}
-				<button id="give_offer" name="offer" type="submit" value="give_offer">Make Give Offer</button>
+	<h2 id="if-deleted"></h2>
+	<div id="active_post">
+		<h1>{{ user_posting.title }}</h1>
+			<input id="post_id" name="post_id" type="hidden" value="{{ user_posting.post_id }}">
+			by <a href="/user_profile/{{ user_posting.author.username }}">{{ user_posting.author.username }}</a> at <p id="post_date">{{ user_posting.post_date }}</p><br>
+			{% if session['logged_in'] == user_posting.author.username %}
+				<button id="delete" name="delete_posting" type="submit" value="{{ user_posting.post_id }}">Delete My Post</button>
 			{% endif %}
-			<div id="sent_receipt">
-			</div>
-		{% elif session['logged_in'] in users_requested %}
-			<h6><i>You have already made a request on this post.</i></h6>
-		{% endif %}
+			<p id="post_description">{{ user_posting.description }}</p><br>
+			{% if 'logged_in' in session and user_score > 0 %}
+				<form id="post_comment" action="/save_comment" method="POST">
+					<textarea id="comment_body" name="comment" rows=3 columns=100>
+					</textarea><br>
+					<input id="submit_comment" type="submit" value="Post Comment">
+				</form><br>
+			{% endif %}
+			<h3>Comments on Posting:</h3>
+			{% for comment in user_posting.comments %}
+				<div>"{{ comment.comment_body }}" posted at: {{ format_date(comment.time_posted) }} by user <a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a></div>
+			{% endfor %}
+			<div id="new_comment"></div><br>
+			{% if session['logged_in'] != user_posting.author.username %}
+				{% if session['logged_in'] not in users_requested %} 
+					<div>
+						Send a message with a 
+						{% if user_posting.is_give == True %}
+							Get Request
+						{% elif user_posting.is_give == False %}
+							Give Offer
+						{% endif %} to <a href="/user_profile/{{ user_posting.author.username }}">{{ user_posting.author.username }}</a>:
+					</div>
+					{% if user_posting.is_give == True %}
+						<textarea id="message" name="message" rows=3 columns=100>
+						</textarea><br>
+						<button id="get_request" name="request" type="submit" value="get_request">Make Get Request</button>
+					{% elif user_posting.is_give == False %}
+						<textarea id="message" name="message" rows=3 columns=100>
+						</textarea><br>
+						<button id="give_offer" name="offer" type="submit" value="give_offer">Make Give Offer</button>
+					{% endif %}
+					<div id="sent_receipt">
+					</div>
+				{% elif session['logged_in'] in users_requested %}
+					<h6><i>You have already made a request on this post.</i></h6>
+				{% endif %}
+			{% endif %}
+	</div>
 
 <script type="text/javascript" src="/static/js/user_posting.js"></script>
 		

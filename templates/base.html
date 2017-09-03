@@ -9,6 +9,11 @@
             height: 300px;
             width: 800px;
         }
+        .message {
+           border: 1px blue;
+           padding: 2px; 
+           margin: 5px;
+        }
         .category_tag {
            border: 1px solid red;
            padding: 2px; 
@@ -24,6 +29,11 @@
         .unseen {
             color: red;
         }
+        #map {
+        height: 20em;
+        }
+        
+    
     </style>
 </head>
 <body>
@@ -34,12 +44,6 @@
 	</ul>
 
 	 {% if 'logged_in' in session %}
-        <div>
-            <form action="/log_out">
-                Would you like to logout?
-                <input type="submit" value="Logout">
-            </form>
-	   </div>
             <a href="/user_home">Return to My Homepage</a>
         <div>
         <div>
@@ -48,6 +52,11 @@
         <div>
             <a href="/browse">Browse</a>
         </div>
+         <div>
+            <form action="/log_out">
+                <input type="submit" value="Logout">
+            </form>
+       </div>
     {% endif %}
 
     {% if 'logged_in' not in session %}

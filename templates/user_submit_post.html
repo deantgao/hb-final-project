@@ -9,7 +9,15 @@
 	{% endif %}
 		
 	<form id="confirm_post" action="/confirm_post" method="POST">
-	Please indicate the approximate location of your item by address:<input name="location" id="location_search" type="text"><br>
+	<!-- Please indicate the address of your item:<input name="location" id="location_search" type="text"><br>
+	<h6><i>*Your address will not be disclosed or appear anywhere. In fact, we will use your address and generate random coordinates that are within a reasonable distance from your address</i><h6> -->
+		Please input an alternate address if you do not want to use approximate current location to locate your posting.<br>
+		<input id="post_locator" name="post_locator" type="text"><br>
+		<input name="location" type="submit" id="submit_address" value="Locate My Posting"><br>
+		<i>The coordinates will be randomized to be within a reasonable distance of your input address.</i>
+		<div id="map"></div>
+		<input id="latitude" name="lat_coordinates" type="hidden">
+		<input id="longitude" name="long_coordinates" type="hidden">
 		Please select the category(ies) that your 
 		{% if user_interest == "give" %}
 			giving
@@ -37,8 +45,8 @@
 			<input name="post" type="submit" id="submit_post" value="Confirm my getting post!">
 		{% endif %}
 	</form>
-
-	<script type="text/javascript"
-		src="/static/js/give_post.js">
+	<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB_O7Jr3xSkDiw0fRVrAIM4CMafgPwtFtQ&callback=initMap"></script>
+	<script type="text/javascript" src="/static/js/give_post.js">
 	</script>
+	<script type="text/javascript" src="/static/js/google_maps.js"></script>
 {% endblock %}

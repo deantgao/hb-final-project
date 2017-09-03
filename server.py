@@ -2,7 +2,7 @@ from flask import Flask, redirect, request, render_template, session, flash, jso
 # from flask_debugtoolbar import DebugToolbarExtension
 from jinja2 import StrictUndefined
 from model import GiveOffer, GetRequest, PostComment, Age, Income, Gender, SexOr, Race, User, Post, Picture, PostCategory, Category, Message, Following, connect_to_db, db 
-from sqlalchemy import distinct
+from sqlalchemy import distinct, or_, and_
 import random
 import datetime
 
@@ -120,7 +120,6 @@ def home_menu():
     if 'logged_in' in session:
         user_obj = User.query.filter_by(username=session.get("logged_in")).first()
         user_post_objs = Post.query.filter_by(user_id=user_obj.user_id).all() 
-        # all the posts made by logged in user
         requests_per_post = {}
         for user_post_obj in user_post_objs:
             requests_per_post[user_post_obj] = user_post_obj.get_requests
@@ -133,7 +132,7 @@ def home_menu():
         post_comment_objs_per_post = [user_post.comments for user_post in user_post_objs] 
         unseen_post_comment_objs, all_comments = get_notifications(post_comment_objs_per_post) # a single list of ALL unseen commments for a particular user
         all_comments.sort(key=lambda obj: obj.post_id)
-        num_notifications = len(unseen_offer_objs + unseen_post_comment_objs + unseen_request_objs)
+        num_notifications = calculate_unseen_notifications(user_obj)
         num_gives = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == True])
         num_gets = len([get_request_obj.post_id for get_request_obj in user_obj.get_requests if get_request_obj.post.recipient_user_id == user_obj.user_id])
         user_score = calculate_user_score(num_gives, num_gets)
@@ -160,7 +159,10 @@ def mark_notification_seen():
     query.is_seen = True
     db.session.commit()
 
-    return "success"
+    current_user = User.query.filter_by(username=session["logged_in"]).first()
+    num_notifications = calculate_unseen_notifications(current_user)
+
+    return jsonify({'results' : num_notifications})
 
 @app.route("/user_interest")
 def user_choice():
@@ -190,8 +192,7 @@ def user_choice():
 
 @app.route("/confirm_post", methods=["POST"])
 def confirm_post():
-    """Confirms a user's posting, saves their posting and 
-    associated categories to the database."""
+    """Confirms a user's posting, saves their posting and associated categories to the database."""
     # import pdb; pdb.set_trace()
     user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
     sel_categories = request.form.getlist('category')
@@ -201,8 +202,11 @@ def confirm_post():
     post_type = request.form.get("post_type")
     post_title = request.form.get("post_title")
     description = request.form.get("post_message")
+    latitude = request.form.get("lat_coordinates")
+    longitude = request.form.get("long_coordinates")
     give_or_get = is_give_or_get(post_type) # returns t or f
-    post = Post(user_id=user_id, title=post_title, description=description, post_date=datetime.datetime.now(), is_give=give_or_get)
+    post = Post(user_id=user_id, title=post_title, description=description, latitude=float(latitude), longitude=float(longitude),
+                post_date=datetime.datetime.now(), is_give=give_or_get)
     db.session.add(post)
     db.session.commit()
 
@@ -255,7 +259,13 @@ def filter_search():
 
     keyword = request.args.get("keyword")
     post_type = request.args.get("post_type")
+    print "what does this ID as the post type?", post_type
     address = request.args.get("address") 
+    lat = request.args.get("latitude")
+    print "is any of this coming in ???", lat
+    lng = request.args.get("longitude")
+    miles = request.args.get("given_miles")
+    print "what are these miles coming in as??", miles
     category_ids = request.args.getlist("categories[]")[1:]
 
     results = Post.query
@@ -263,18 +273,27 @@ def filter_search():
         results = results.filter(Post.is_give==True) 
     elif post_type == "get":
         results = results.filter(Post.is_give==False)
+    elif post_type == "all": 
+        results = results
     if keyword:    
-        results = results.filter(Post.description.ilike("%" + keyword + "%")) 
+        results = results.filter(Post.description.ilike("%" + keyword + "%"))
+    if lat:
+        latitude = float(lat)
+        longitude = float(lng)
+        given_miles = float(miles)
+        results = results.filter(Post.latitude > latitude - MILES_PER_DEG_LAT * given_miles,                   
+                                Post.latitude < latitude + MILES_PER_DEG_LAT * given_miles, 
+                                Post.longitude > longitude - convert_miles_to_lng_degs(given_miles, latitude),                   
+                                Post.longitude < longitude + convert_miles_to_lng_degs(given_miles, latitude))     
     results = results.all()
-    print "these should be all post objs: ", results
     if category_ids:
         category_ids = set(int(cat_id) for cat_id in category_ids)
         results = [result for result in results if set(category_ids) 
                    & set([post_category.category_id for post_category in result.post_categories])]
     results = [result.serialize for result in results]
-    print "what the f are these????", results
 
     return jsonify({'results' : results})
+
     #     gives_match_gets = filter(filter_post_by_category, give_category_ids) 
     #     # a list of tuples (post_id number, [post_category ids where get matches give])
     #     # filter(takes in a function that passes in each item in the proceeding list and discards any "false-y" comparisons (ie where
@@ -286,11 +305,6 @@ def filter_search():
 def user_posting(post_id):
     """Displays each individual user posting that corresponds with the user's post ID."""
 
-    #write logic to check if the post has a recipient
-    #if post.recipient_user_id and post.author_id != current user and session['logged_in'] != :
-        # flash "no longer active"
-        # redirect browse
-    
     user_posting_obj = Post.query.filter_by(post_id=post_id).first()
     requests_on_post_objs = GetRequest.query.filter_by(post_id=post_id).all()
     usernames_made_requests = [requests_on_post.user_made_request.username for requests_on_post 
@@ -298,6 +312,8 @@ def user_posting(post_id):
     requests_on_post_objs = GetRequest.query.filter_by(post_id=post_id).all()
     user_score = None
 
+    if not user_posting_obj:
+        return redirect("/user_home")
     if "logged_in" not in session:
         flash("This posting is no longer active.")
         return redirect("/browse")
@@ -321,6 +337,21 @@ def user_posting(post_id):
         return render_template("user_posting.html", user_posting=user_posting_obj, 
                                 user_score=user_score, users_requested=usernames_made_requests)
 
+@app.route('/delete_posting')
+def delete_posting():
+    """Deletes a user's posting from the database."""
+
+    post_id = request.args.get("post_id")
+    post_categories_to_delete = PostCategory.query.filter_by(post_id=post_id).delete()
+    # db.session.delete(post_categories_to_delete)
+    db.session.commit()
+    post_to_delete = Post.query.filter_by(post_id=post_id).first()
+    db.session.delete(post_to_delete)
+    db.session.commit()
+
+    return jsonify({'results' : 'post has been deleted'})
+
+
 @app.route("/save_comment", methods=["POST"])
 def save_comment():
     """Saves a comment on a post to the database."""
@@ -332,7 +363,7 @@ def save_comment():
     db.session.add(comment)
     db.session.commit()
 
-    com_post_time = datetime.datetime.strftime(comment.time_posted, "%Y-%m-%d")
+    com_post_time = datetime.datetime.strftime(comment.time_posted, "%I:%M %p on %m-%d-%Y")
     return jsonify({'results' : com_post_time})
 
 @app.route("/make_get_request", methods=["POST"])
@@ -357,12 +388,13 @@ def make_give_offer():
     """Saves a give offer to the database."""
 
     message = request.form.get("message")
+    print "is this getting thru and what is the message? ", message
     post_id = request.form.get("post_id")
     post_obj = Post.query.filter_by(post_id=post_id).one()
     # post_user_obj = post_obj.author
     # requests_for_user_objs = post_obj.get_requests
     user_id = User.query.filter_by(username=session.get('logged_in')).first().user_id
-    message = GiveOffer(post_id=post_id, user_id=user_id, time_offered=datetime.datetime.now(), 
+    message = GiveOffer(post_id=post_id, user_made_offer_id=user_id, time_offered=datetime.datetime.now(), 
                         offer_message=message)
     db.session.add(message)
     db.session.commit()
@@ -393,10 +425,18 @@ def undo_approve():
 
     return jsonify({'results' : "post is now active"})
 
+def format_date(date):
+    reformat = date.strftime("%I:%M %p on %m-%d-%Y")
+    if reformat[0] == "0":
+        reformat = reformat[1:]
+    print type(reformat)
+    return reformat
+
 @app.route("/user_profile/<username>")
 def user_profile(username):
     """Displays individual user's profile page with their user activity."""
 
+    current_user = User.query.filter_by(username=session['logged_in']).first()
     profile_user_obj = User.query.filter_by(username=username).first()
     profile_user_post_objs = Post.query.filter_by(user_id=profile_user_obj.user_id).all()
     profile_user_comment_objs = PostComment.query.filter_by(user=profile_user_obj).all()
@@ -404,8 +444,43 @@ def user_profile(username):
     all_user_activity_objs.sort(key=lambda obj: obj.post_date if type(obj) == Post else obj.time_posted)
     print "these should be chronologically ordered user activity: ", all_user_activity_objs
 
-    return render_template("user_profile.html", profile_user=profile_user_obj, 
+    return render_template("user_profile.html", current_user=current_user, profile_user=profile_user_obj, 
                             all_user_activity=all_user_activity_objs, profile_user_posts=profile_user_post_objs)
+
+@app.route("/message_user/<int:sender_id>&<int:recipient_id>", methods=['POST'])
+def message_user(sender_id, recipient_id):
+    """Displays message page between two users."""
+
+    current_user_id = User.query.filter_by(username=session['logged_in']).first().user_id
+    if current_user_id == sender_id:
+        user_messaged = User.query.filter_by(user_id=recipient_id).first()
+        sent_messages = Message.query.filter(Message.recipient_id==recipient_id, Message.sender_id==sender_id).all()
+        received_messages = Message.query.filter(Message.recipient_id==sender_id, Message.sender_id==recipient_id).all()
+        message_thread = sent_messages + received_messages
+        if message_thread:
+            message_thread.sort(key=lambda obj: obj.time_sent)
+        return render_template("user_messages.html", message_thread=message_thread, user_messaged=user_messaged)
+
+    else:
+        flash("I'm sorry. You do not have access to this page.")
+        return redirect("/browse")
+
+@app.route("/save_message", methods=["POST"])
+def save_message():
+    """Saves each message exchanged between two users."""
+
+    message_body = request.form.get("message_body")
+    recipient_id = request.form.get("recipient_id")
+    sender_id = User.query.filter_by(username=session['logged_in']).first().user_id
+
+    save_message = Message(time_sent=datetime.datetime.now(), recipient_id=recipient_id, 
+                   sender_id=sender_id, message_body=message_body)
+    db.session.add(save_message)
+    db.session.commit()
+
+    message_time_sent = datetime.datetime.strftime(save_message.time_sent, "%I:%M %p on %m-%d-%Y") 
+
+    return jsonify({'results' : message_time_sent})
 
 @app.route("/log_out")
 def log_out():
@@ -417,6 +492,39 @@ def log_out():
 
 ###############################################################
 # Helper functions 
+
+def calculate_unseen_notifications(user):
+    """Calculates all the unseen notifications of a particular user."""
+
+    user_post_objs = Post.query.filter_by(user_id=user.user_id).all() 
+    # all the posts made by logged in user
+    requests_per_post = {}
+    for user_post_obj in user_post_objs:
+        requests_per_post[user_post_obj] = user_post_obj.get_requests
+    requests_on_each_post = [user_post_obj.get_requests for user_post_obj in user_post_objs]
+    unseen_request_objs, all_requests = get_notifications(requests_on_each_post)
+    # all_requests.sort(key=lambda obj: obj.post_id)
+    offers_on_each_post = [user_post_obj.give_offers for user_post_obj in user_post_objs]
+    unseen_offer_objs, all_offers = get_notifications(offers_on_each_post)
+    all_offers.sort(key=lambda obj: obj.post_id)
+    post_comment_objs_per_post = [user_post.comments for user_post in user_post_objs] 
+    unseen_post_comment_objs, all_comments = get_notifications(post_comment_objs_per_post) # a single list of ALL unseen commments for a particular user
+    all_comments.sort(key=lambda obj: obj.post_id)
+    num_notifications = len(unseen_offer_objs + unseen_post_comment_objs + unseen_request_objs)
+    return num_notifications
+
+EARTH_CIRCUM = 24901 
+MILES_PER_DEG_LNG_AT_EQ = float(EARTH_CIRCUM / 360.0) 
+MILES_PER_DEG_LAT = MILES_PER_DEG_LNG_AT_EQ 
+
+def convert_miles_to_lng_degs(given_miles, given_lat):    
+    """Approximate the numbers of degrees of longitude corresponding 
+    to the given number of miles at the given latitude"""    
+    percentage_away_from_pole = (90 - given_lat) / 90.0    
+    miles_per_deg_at_lat = MILES_PER_DEG_LNG_AT_EQ * percentage_away_from_pole    
+    degs_per_mile_at_lat = 1 / miles_per_deg_at_lat    
+    lng_degs = given_miles * degs_per_mile_at_lat    
+    return lng_degs 
 
 def filter_by_keyword(keyword=None, post_type=None):
     """Returns all active posts that match   a keyword search."""
@@ -476,5 +584,5 @@ if __name__ == "__main__":
     connect_to_db(app)
     # Use the DebugToolbar
     # DebugToolbarExtension(app)
-
+    app.jinja_env.globals.update(format_date=format_date)
     app.run(host="0.0.0.0")

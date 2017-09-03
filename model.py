@@ -102,9 +102,9 @@ class Post(db.Model):
     recipient_user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True, default=None)
     title = db.Column(db.String(50), nullable=True)
     description = db.Column(db.String(1000), nullable=False)
-    latitude = db.Column(db.String(100), nullable=True) #should these be strings?
-    longitude = db.Column(db.String(100), nullable=True)
-    post_date = db.Column(db.DateTime, nullable=False) # is there anything else needed here?
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    post_date = db.Column(db.DateTime, nullable=False)
     is_give = db.Column(db.Boolean(), nullable=False, default=None) # is this correct syntax for boolean?
     # is_active = db.Column(db.Boolean(), nullable=False, default=True) # is this correct syntax for boolean?
     featured_img = db.Column(db.String(400), nullable=True)
@@ -129,7 +129,7 @@ class Post(db.Model):
             "post_date": self.post_date.strftime("%Y-%m-%d"),
             "author": self.author.serialize
         }
-        
+
 class GetRequest(db.Model):
     """Each individual get request on a user's give posting."""
 
@@ -317,27 +317,27 @@ if __name__ == "__main__":
     app = Flask(__name__)
 
     connect_to_db(app)
-    # db.drop_all()
-    # db.create_all()
-    # print "Connected to DB."
+    db.drop_all()
+    db.create_all()
+    print "Connected to DB."
 
-    # categories = ["Clothing", "Services", "Food", "Furniture", "Books", "Toys", "Electronics", "Vehicles"]
-    # create_categories(categories)
+    categories = ["Clothing", "Services", "Food", "Furniture", "Books", "Toys", "Electronics", "Vehicles", "Miscellaneous"]
+    create_categories(categories)
 
-    # income_levs = ["", "Un/underemployed", "Under $30,000", "$30,000-$70,000", "$70,000-$100,000", "Over $100,000"]
-    # create_incomes(income_levs)
+    income_levs = ["", "Un/underemployed", "Under $30,000", "$30,000-$70,000", "$70,000-$100,000", "Over $100,000"]
+    create_incomes(income_levs)
 
-    # ages = ["", "18 or Under", "19-25", "25-35", "35-50", "50-65", "65 or Older"]
-    # create_ages(ages)
+    ages = ["", "18 or Under", "19-25", "25-35", "35-50", "50-65", "65 or Older"]
+    create_ages(ages)
 
-    # genders = ["", "Transmasculine", "Transfeminine", "Woman", "Man", "Genderqueer", "Agender", "Two-Spirit"]
-    # create_genders(genders)
+    genders = ["", "Transmasculine", "Transfeminine", "Woman", "Man", "Genderqueer", "Agender", "Two-Spirit"]
+    create_genders(genders)
 
-    # races = ["", "Black/African American", "Latino/a/x", "Pacific Islander", "Southeast Asian", 
-    #          "South Asian", "East Asian", "Native American", "White", "Mixed Race"]
-    # create_races(races)
+    races = ["", "Black/African American", "Latino/a/x", "Pacific Islander", "Southeast Asian", 
+             "South Asian", "East Asian", "Native American", "White", "Mixed Race"]
+    create_races(races)
 
-    # sex_ors = ["", "Queer", "Lesbian", "Gay", "Bisexual", "Pansexual", "Straight", "Asexual"]
-    # create_sex_ors(sex_ors)
+    sex_ors = ["", "Queer", "Lesbian", "Gay", "Bisexual", "Pansexual", "Straight", "Asexual"]
+    create_sex_ors(sex_ors)
 
 

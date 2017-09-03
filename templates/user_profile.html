@@ -3,38 +3,44 @@
 
 {% block content %}
 	<h1>{{ profile_user.username }}</h1>
-	{% if 'logged_in' in session %}
+	{% if 'logged_in' in session and session['logged_in'] != profile_user.username %}
 		<button id="follow" name="follow_user" type="submit" data-user-followed-id="{{ profile_user.user_id }}" data-user-following-uname="{{ session['logged_in'] }}">Follow <i>{{ profile_user.username }}</i></button><br>
-		<button id="message" name="message_user"	type="submit" data-user-messaged-id="{{ profile_user.user_id }}" data-user-sent-message="{{ session['logged_in'] }}">Send <i>{{ profile_user.username }}</i> a message</button>
+		<form action="/message_user/{{ current_user.user_id }}&{{ profile_user.user_id }}" method="POST"> 
+			<button id="message" name="message_user" type="submit" data-user-messaged-id="{{ profile_user.user_id }}" data-user-sent-message="{{ session['logged_in'] }}">Message <i>{{ profile_user.username }}</i></button>
+		</form>
 	{% endif %}
 	<h3>{{ profile_user.username }}'s Recent Activity</h3>
 	{% for activity in all_user_activity %}
 		{% if activity.unique_id == 0 %}
 			{% if activity.is_give == True %}
 				<div>
-					{{ profile_user.username }} made a <a href="/post/post_id/{{ activity.post_id }}">giving post</a> at {{ activity.post_date }}
+					{{ profile_user.username }} made a <a href="/post/post_id/{{ activity.post_id }}">giving post</a> at {{ format_date(activity.post_date) }}
 				</div>
 			{% elif activity.is_give == False %}
 				<div>
-					{{ profile_user.username }} made a <a href="/post/post_id/{{ activity.post_id }}">getting post</a> at {{ activity.post_date }}
+					{{ profile_user.username }} made a <a href="/post/post_id/{{ activity.post_id }}">getting post</a> at {{ format_date(activity.post_date) }}
 				</div>
 			{% endif %}
 		{% elif activity.unique_id == 1 %}
 			<div>
-				{{ profile_user.username }} commented on <a href="/user_profile/{{ activity.post.author.username }}">{{ activity.post.author.username }}</a>'s <a href="/post/post_id/{{ activity.post_id }}">post</a> at {{ activity.time_posted }}
+				{{ profile_user.username }} commented on <a href="/user_profile/{{ activity.post.author.username }}">{{ activity.post.author.username }}</a>'s <a href="/post/post_id/{{ activity.post_id }}">post</a> at {{ format_date(activity.time_posted) }}
 			</div>
 		{% endif %}
 	{% endfor %}
 	<script>
 	function followUser() {
-		
+	
 	}
 	
 	$('#follow').on('submit', followUser);
 
-	function messageUser() {
-		
-	}
-	$('#message').on('submit', messageUser);
+	// function messageUser() {
+	// 	var userMessaged = $(this).data('userMessagedId');
+	// 	console.log(userMessaged);
+	// 	var userSentMessage = $(this).data('userSentMessage');
+	// 	console.log(userSentMessage);
+	// }
+	
+	// $('#message').on('click', messageUser);
 	</script>
 {% endblock %}
