@@ -2,15 +2,15 @@
 {% block title %}User Messages Page{% endblock %}
 
 {% block content %}
-	<h3>Messages between you and {{ user_messaged.username }}:</h3>
+	<h3>Messages between <a>you</a> and <a style="color:#ff38ff" href="/user_profile/{{ user_messaged.username }}">{{ user_messaged.username }}</a>:</h3>
 		<div id="messages">
 			{% for message in message_thread %}
-				<div class="message">
-					{{ message.message_body }} sent at {{ message.time_sent }} by 
+				<div id="ind-message" class="message">
+					{{ message.message_body }} sent at {{ format_date(message.time_sent) }} by 
 					{% if message.sender_id == user_messaged.user_id %}
-						{{ user_messaged.username }}
+						<i style="color:#ff38ff">{{ user_messaged.username }}</i>
 					{% else %}
-						<i>you</i>
+						<i style="color:#0ff5dc">you</i>
 					{% endif %}
 				</div>
 			{% endfor %}
@@ -26,9 +26,10 @@
 			var data = {message_body : messageBody,
 						recipient_id : recipientId};
 			console.log(messageBody);
+			$('#message_body').val("")
 			$.post("/save_message", data, function (results) {
 				console.log(results);
-				$('#messages').append("<div class='message'>" + messageBody + " sent at " + results['results'] + " by " + "<i> you</i>" + "</div>");
+				$('#messages').append("<div class='message' style='font-size: 22px;'>" + messageBody + " sent at " + results['results'] + " by " + "<i> you</i>" + "</div>");
 			})
 		}
 

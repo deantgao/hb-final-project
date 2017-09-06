@@ -12,10 +12,10 @@
 	<!-- Please indicate the address of your item:<input name="location" id="location_search" type="text"><br>
 	<h6><i>*Your address will not be disclosed or appear anywhere. In fact, we will use your address and generate random coordinates that are within a reasonable distance from your address</i><h6> -->
 		Please input an alternate address if you do not want to use approximate current location to locate your posting.<br>
-		<input id="post_locator" name="post_locator" type="text"><br>
-		<input name="location" type="submit" id="submit_address" value="Locate My Posting"><br>
+		<input style="color:black" id="post_locator" name="post_locator" type="text"><br>
+		<input style="color:black" name="location" type="submit" id="submit_address" value="Locate My Posting"><br>
 		<i>The coordinates will be randomized to be within a reasonable distance of your input address.</i>
-		<div id="map"></div>
+		<div style="color:black" id="map"></div>
 		<input id="latitude" name="lat_coordinates" type="hidden">
 		<input id="longitude" name="long_coordinates" type="hidden">
 		Please select the category(ies) that your 
@@ -33,20 +33,18 @@
 		</div><br> -->
 		<br>
 		Post Title: 
-		<input name="post_title" id="post_title" type="text"><br><br>
+		<input style="color:black" name="post_title" id="post_title" type="text"><br><br>
 		Please enter the body of your post:<br>
-		<textarea rows=8 columns=50 id="post_message" name="post_message">
+		<textarea style="color:black" rows=8 columns=50 id="post_message" name="post_message">
 		</textarea><br>
 		{% if user_interest == "give" %}
 			<input name="post_type" type="hidden" value="give">
-			<input name="post" type="submit" id="submit_post" value="Confirm my giving post!">
+			<input style="color:black" name="post" type="submit" id="submit_post" value="Confirm my giving post!">
 		{% else %}
 			<input name="post_type" type="hidden" value="get">
-			<input name="post" type="submit" id="submit_post" value="Confirm my getting post!">
+			<input style="color:black" name="post" type="submit" id="submit_post" value="Confirm my getting post!">
 		{% endif %}
 	</form>
 	<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB_O7Jr3xSkDiw0fRVrAIM4CMafgPwtFtQ&callback=initMap"></script>
-	<script type="text/javascript" src="/static/js/give_post.js">
-	</script>
 	<script type="text/javascript" src="/static/js/google_maps.js"></script>
 {% endblock %}

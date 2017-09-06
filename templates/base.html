@@ -2,9 +2,47 @@
 <html>
 <head>
     <title>{% block title %}TITLE GOES HERE{% endblock %}</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css?family=Oswald" rel="stylesheet"> 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.js">></script>
     <style>
+        a {
+            color:#0ff5dc;
+        }
+        html{
+            margin: 0;
+            height: 100%;
+            overflow: auto;
+        }
+
+
+        body {
+            color:white;
+            background: rgba(0,30,20,.5);
+            font-family: "Oswald", serif;
+            background-size: cover;
+            {% if not "logged_in" in session %}
+                background-image: url("/static/share-2482016__480.jpg");
+            {% endif %}
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-position: center;
+            height: 100%;
+            margin: 0;
+            overflow: auto;
+        }
+        button {
+            color:black;
+            border: 0px;
+            border-radius: 10px;
+        }
+
+        textarea {
+            color:black;
+        }
+        
         #post_message {
             height: 300px;
             width: 800px;
@@ -14,60 +52,219 @@
            padding: 2px; 
            margin: 5px;
         }
+        .dropdown {
+            color:black;
+        }
         .category_tag {
            border: 1px solid red;
            padding: 2px; 
            margin: 5px;
         }
+
         #post_title {
             width: 800px;
         }
         .seen {
-            color: black;
+            font-size: 20px;
+            color: white;
         }
 
         .unseen {
-            color: red;
+            font-size: 20px;
+            color: #ff38ff;
         }
         #map {
         height: 20em;
         }
         
-    
+        .flash-messages {
+            background-color: white;
+            color: black;
+            text-align: center;
+        }
+
+        #existing-user {
+            text-align: center;
+            font-size: 22px;
+        }
+
+        #sign-up-wrapper {
+            text-align: center;
+            margin-bottom: -112px;
+        }
+        #welcome-title{
+            font-size: 12vw;
+            letter-spacing: 5vw;
+            color: #0ff5dc;
+        }
+
+        #requests {
+            color: white;
+        }
+        #activity {
+            font-size: 22px;
+        }
+        #comment-activity {
+            font-size: 22px;
+        }
+        #submit_comment {
+            color:black;
+            border: 0px;
+            border-radius: 10px;
+        }
+        #sign-up-button{
+            color: white;
+            width: 280px;
+            height: 80px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-weight: 800;
+            background: #ff38ff;
+            border: 0px;
+            box-shadow: 0 0 10px 1px;
+            margin: 30vh 0;
+        }
+
+        #login-link{
+            color: #0ff5dc;
+            
+        }
+        #give_button {
+            color: white;
+            width: 300px;
+            height: 55px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 24px;
+            background: #ff38ff;
+            border: 0px;
+            box-shadow: 0 0 12px 1px;
+            margin-bottom: 25px;
+        }
+        #greet-user {
+            text-align:center;
+            font-size:75px;
+            color: #0ff5dc;
+        }
+        #get_button {
+            color: white;
+            width: 300px;
+            height: 55px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 24px;
+            background: #ff38ff;
+            border: 0px;
+            box-shadow: 0 0 12px 1px;
+        }
+        #interest-today {
+            text-align: center;
+        }
+        #all-notifications {
+            text-align:center;
+            font-size: 40px;
+            margin: 40px;
+        }
+        #ind-message {
+            font-size: 22px;
+        }
+
+        #new_notifications {
+            color: #ff38ff;
+            border-radius: 10px;
+            border: 0px;
+            box-shadow: 0 0 12px 1px;
+        }
+        #filter_search {
+            color:black;
+            border-radius: 10px;
+            border: 0px;
+        }
+        #miles {
+            color:black;
+            border-radius: 2px;
+        }
+
     </style>
 </head>
 <body>
-	<ul>
-        {% for message in get_flashed_messages() %}
-        	<li>{{ message }}</li>
-        {% endfor %}
-	</ul>
+<div>
+    <div class="flex-container">
+    {% if 'logged_in' in session %}
+        <nav class="navbar navbar-inverse">
+                <div class="container-fluid">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </button>
+                  <a class="navbar-brand" href="/user_home">Home</a>
+                </div>
 
-	 {% if 'logged_in' in session %}
-            <a href="/user_home">Return to My Homepage</a>
-        <div>
-        <div>
-            <a href="/user_profile/{{ session.get('logged_in') }}">See My Profile</a>
-        </div>
-        <div>
-            <a href="/browse">Browse</a>
-        </div>
-         <div>
-            <form action="/log_out">
-                <input type="submit" value="Logout">
-            </form>
-       </div>
+                <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                  <ul class="nav navbar-nav">
+                    <li class="active"><a href="/user_profile/{{ session.get('logged_in') }}">My Profile</a></li>
+                    <li class="dropdown">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">My Postings<span class="caret"></span></a>
+                      <ul class="dropdown-menu">
+                        {% for posting in g.posts %}
+                            <li><a href="/post/post_id/{{ posting.post_id }}">{{ posting.title }}</a></li>
+                        {% endfor %}
+                      </ul>
+                    </li>
+                    <li class="dropdown">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">My Messages<span class="caret"></span></a>
+                      <ul class="dropdown-menu">
+                          {% for messages in g.message_threads %}
+                            {% if messages.recipient_id != g.user_id %}
+                                <li><a href="/message_user/{{ g.user_id }}&{{ messages.recipient_id }}">{{ messages.message_body }} <i style="font-size:xx-small">with {{ messages.user_receive.username }}</i></a></li>
+                            {% else %}
+                                <li><a href="/message_user/{{ g.user_id }}&{{ messages.sender_id }}">{{ messages.message_body }} <i style="font-size:xx-small">with {{ messages.user_sent.username }}</i></a></li>
+                            {% endif %}
+                          {% endfor %}
+                      </ul>
+                    </li>
+                    <li class="dropdown">
+                      <a style="width: 235px;" href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">My Notifications   [{{ g.unseen_notifications|length }}]<span class="caret"></span></a>
+                      <ul class="dropdown-menu">
+                        {% for notification in g.unseen_notifications %}
+                            {% if notification.user_made_request is defined %}
+                                <li><a href="/post/post_id/{{ notification.post_id }}">Get Request on {{ notification.post.title }} <i style="font-size:xx-small">by {{ notification.user_made_request.username }}</i></a></li>
+                            {% elif notification.user is defined %}
+                                <li><a href="/post/post_id/{{ notification.post_id }}">Comment on {{ notification.post.title }} <i style="font-size:xx-small">by {{ notification.user.username }}</i></a></li>
+                            {% elif notification.user_made_offer is defined %}
+                                <li><a href="/post/post_id/{{ notification.post_id }}">Give Offer on {{ notification.post.title }} <i style="font-size:xx-small">by {{ notification.user_made_offer.username }}</i></a></li>
+                            {% endif %}
+                        {% endfor %}
+                      </ul>
+                    </li>
+                  </ul>
+                  <ul class="nav navbar-nav navbar-right">
+                    <li class="active"><a href="/browse">Browse</a></li>
+                    <li class="active"><a href="/log_out">Log Out</a></li>
+                  </ul>
+                </div><!-- /.navbar-collapse -->
+            </div><!-- /.container-fluid -->
+        </nav>
     {% endif %}
-
-    {% if 'logged_in' not in session %}
-        <form action="/new_user">
-            <input type="submit" value="Sign Up for Free!">
-            <br>
-            <h6><a href="/login_form">Already an existing user? Log in!</a></h6>
-        </form>
-    {% endif %}
-    
+</div>
+<div class="container">
+    <div class="row">
+            {% for message in get_flashed_messages() %}
+                <div class="col-xs-12 flash-messages">{{ message }}</div>
+            {% endfor %}
+    </div>
     {% block content %}BODY CONTENT GOES HERE{% endblock %}
+</div>
+</div>
+
+
+    
+    
 
 </body>
 </html>

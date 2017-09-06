@@ -5,7 +5,7 @@
 	<h1>{{ profile_user.username }}</h1>
 	{% if 'logged_in' in session and session['logged_in'] != profile_user.username %}
 		<button id="follow" name="follow_user" type="submit" data-user-followed-id="{{ profile_user.user_id }}" data-user-following-uname="{{ session['logged_in'] }}">Follow <i>{{ profile_user.username }}</i></button><br>
-		<form action="/message_user/{{ current_user.user_id }}&{{ profile_user.user_id }}" method="POST"> 
+		<form action="/message_user/{{ current_user.user_id }}&{{ profile_user.user_id }}"> 
 			<button id="message" name="message_user" type="submit" data-user-messaged-id="{{ profile_user.user_id }}" data-user-sent-message="{{ session['logged_in'] }}">Message <i>{{ profile_user.username }}</i></button>
 		</form>
 	{% endif %}
@@ -13,17 +13,23 @@
 	{% for activity in all_user_activity %}
 		{% if activity.unique_id == 0 %}
 			{% if activity.is_give == True %}
-				<div>
-					{{ profile_user.username }} made a <a href="/post/post_id/{{ activity.post_id }}">giving post</a> at {{ format_date(activity.post_date) }}
+				<div class="row">
+					<div id="activity" class="col-xs-12">
+						{{ profile_user.username }} made a <a href="/post/post_id/{{ activity.post_id }}">giving post</a> at {{ format_date(activity.post_date) }}
+					</div>
 				</div>
 			{% elif activity.is_give == False %}
-				<div>
-					{{ profile_user.username }} made a <a href="/post/post_id/{{ activity.post_id }}">getting post</a> at {{ format_date(activity.post_date) }}
+				<div class="row">
+					<div id="activity" class="col-xs-12">
+						{{ profile_user.username }} made a <a href="/post/post_id/{{ activity.post_id }}">getting post</a> at {{ format_date(activity.post_date) }}
+					</div>
 				</div>
 			{% endif %}
 		{% elif activity.unique_id == 1 %}
-			<div>
-				{{ profile_user.username }} commented on <a href="/user_profile/{{ activity.post.author.username }}">{{ activity.post.author.username }}</a>'s <a href="/post/post_id/{{ activity.post_id }}">post</a> at {{ format_date(activity.time_posted) }}
+			<div class="row">
+				<div div id="comment-activity" class="col-xs-12">
+					{{ profile_user.username }} commented on <a href="/user_profile/{{ activity.post.author.username }}">{{ activity.post.author.username }}</a>'s <a href="/post/post_id/{{ activity.post_id }}">post</a> at {{ format_date(activity.time_posted) }}
+				</div>
 			</div>
 		{% endif %}
 	{% endfor %}

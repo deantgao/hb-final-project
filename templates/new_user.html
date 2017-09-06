@@ -4,46 +4,46 @@
 {% block content %}
 	<h1>Please Tell Us About Yourself!</h1>
 	<form action="/create_account" method="POST">
-		Choose a username: <input type="text" name="username" id="username" required>*<br>
-		Choose a password: <input type="password" name="password" id="password" required>*<br>
-		Enter your email: <input type="text" name="email" id="email" required>*<br>
-		Where are you located? <input type="text" name="location" id="loc_by_reg"><br>
+		Choose a username: <input style="color:black" type="text" name="username" id="username" required>*<br>
+		Choose a password: <input style="color:black" type="password" name="password" id="password" required>*<br>
+		Enter your email: <input style="color:black" type="text" name="email" id="email" required>*<br>
+		Where are you located? <input style="color:black" type="text" name="location" id="loc_by_reg"><br>
 		What is your income level? 
 			<select name="income_lev">
 				{% for income in incomes %}
-					<option value="{{ income.income_id }}">{{ income.type_of }}</option>
+					<option style="color:black" value="{{ income.income_id }}">{{ income.type_of }}</option>
 				{% endfor %}
 			</select><br>
 		Age: 
 			<select name="age">
 				{% for age in ages %}
-					<option value="{{ age.age_id }}">{{ age.type_of }}</option>
+					<option style="color:black" value="{{ age.age_id }}">{{ age.type_of }}</option>
 				{% endfor %}
 			</select><br>
 		Gender:
 			<select name="gender">
 				{% for gender in genders %}
-					<option value="{{ gender.gender_id }}">{{ gender.type_of }}
+					<option style="color:black" value="{{ gender.gender_id }}">{{ gender.type_of }}
 					</option>
 				{% endfor %}
 			</select><br>
 		Racial background:
 			<select name="race">
 				{% for race in races %}
-					<option value="{{ race.race_id }}">{{ race.type_of}}
+					<option style="color:black" value="{{ race.race_id }}">{{ race.type_of}}
 					</option>
 				{% endfor %}
 			</select><br>
 		Sexual Orientation:
 			<select name="sex_or">
 				{% for sex_or in sex_ors %}
-					<option value="{{ sex_or.sex_or_id }}">{{ sex_or.type_of }}
+					<option style="color:black" value="{{ sex_or.sex_or_id }}">{{ sex_or.type_of }}
 					</option>
 				{% endfor %}
 			</select><br> -->
 		Upload a Profile Picture
 			<!-- something might go here -->
 			<br>
-		<input type="submit" value="Create Account">
+		<input style="color:black" type="submit" value="Create Account">
 	</form>
 {% endblock %}

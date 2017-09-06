@@ -1,4 +1,4 @@
-from flask import Flask, redirect, request, render_template, session, flash, jsonify
+from flask import Flask, redirect, request, render_template, session, flash, jsonify, g
 # from flask_debugtoolbar import DebugToolbarExtension
 from jinja2 import StrictUndefined
 from model import GiveOffer, GetRequest, PostComment, Age, Income, Gender, SexOr, Race, User, Post, Picture, PostCategory, Category, Message, Following, connect_to_db, db 
@@ -22,6 +22,28 @@ GET_COMPLIMENTS = ["Hope you find what you are looking for",
                    "Good for you for seeking what you need",
                    "Best of luck in your search",
                    "You deserve to have everything you need"]
+
+@app.before_request
+def setup():
+    """ """
+
+    username = session.get('logged_in')
+    if username:
+        g.user = User.query.filter(User.username==username).first()
+        g.user_id = g.user.user_id
+        g.posts = g.user.posts
+        g.unseen_notifications = calculate_unseen_notifications(g.posts)
+        # g.ordered_notifications = unseen_notifications.sort
+        all_messages = Message.query.filter(or_(Message.sender_id==g.user_id, Message.recipient_id==g.user_id)).order_by(Message.time_sent).all()
+        user_ids_on_messages = set([message.sender_id for message in all_messages] + [message.recipient_id for message in all_messages])
+        g.user_ids_not_logged_in = [num for num in user_ids_on_messages if num != g.user_id]
+        g.message_threads = []
+        for u_id in g.user_ids_not_logged_in:
+            messages = [message for message in all_messages if message.sender_id == u_id or message.recipient_id == u_id]
+            messages.sort(key= lambda message: message.time_sent)
+            g.message_threads.append(messages[0])
+
+
 
 @app.route('/')
 def show_form():
@@ -97,6 +119,8 @@ def verify_user():
     user = User.query.filter_by(username=username).first()
     if user and user.password == password: 
         session['logged_in'] = username
+        session['postings'] = Post.query.filter_by(user_id=user.user_id).all()
+        # pass all user related info in through sessions
         flash("Logged in as {}".format(username))
         return redirect('/user_home')
     elif not user:
@@ -119,7 +143,8 @@ def home_menu():
 
     if 'logged_in' in session:
         user_obj = User.query.filter_by(username=session.get("logged_in")).first()
-        user_post_objs = Post.query.filter_by(user_id=user_obj.user_id).all() 
+        user_post_objs = Post.query.filter_by(user_id=user_obj.user_id).all()
+        user_post_objs.sort(key=lambda obj: obj.post_date) 
         requests_per_post = {}
         for user_post_obj in user_post_objs:
             requests_per_post[user_post_obj] = user_post_obj.get_requests
@@ -132,11 +157,13 @@ def home_menu():
         post_comment_objs_per_post = [user_post.comments for user_post in user_post_objs] 
         unseen_post_comment_objs, all_comments = get_notifications(post_comment_objs_per_post) # a single list of ALL unseen commments for a particular user
         all_comments.sort(key=lambda obj: obj.post_id)
-        num_notifications = calculate_unseen_notifications(user_obj)
+        num_notifications = len(calculate_unseen_notifications(user_obj))
         num_gives = len([user_post_obj.is_give for user_post_obj in user_post_objs if user_post_obj.is_give == True])
         num_gets = len([get_request_obj.post_id for get_request_obj in user_obj.get_requests if get_request_obj.post.recipient_user_id == user_obj.user_id])
         user_score = calculate_user_score(num_gives, num_gets)
-        return render_template("homepage.html", user_score=user_score, num_gives=num_gives, num_gets=num_gets,
+        # user_messages = Message.query.filter(or_(Message.sender_id==user_obj.user_id, Message.recipient_id==user_obj.user_id)).all()
+        # print "are these all the messages exchanged by a given user?", user_messages
+        return render_template("homepage.html", user_postings=user_post_objs, user_score=user_score, num_gives=num_gives, num_gets=num_gets,
                                 num_notifications=num_notifications, requests_per_post=requests_per_post,
                                 all_requests=all_requests, all_offers=all_offers, all_comments=all_comments) 
     else: 
@@ -160,7 +187,7 @@ def mark_notification_seen():
     db.session.commit()
 
     current_user = User.query.filter_by(username=session["logged_in"]).first()
-    num_notifications = calculate_unseen_notifications(current_user)
+    num_notifications = len(calculate_unseen_notifications(current_user))
 
     return jsonify({'results' : num_notifications})
 
@@ -205,6 +232,7 @@ def confirm_post():
     latitude = request.form.get("lat_coordinates")
     longitude = request.form.get("long_coordinates")
     give_or_get = is_give_or_get(post_type) # returns t or f
+    print "is this true or false? (it should be true)", give_or_get 
     post = Post(user_id=user_id, title=post_title, description=description, latitude=float(latitude), longitude=float(longitude),
                 post_date=datetime.datetime.now(), is_give=give_or_get)
     db.session.add(post)
@@ -320,7 +348,7 @@ def user_posting(post_id):
     elif "logged_in" in session:
         user_post_obj = User.query.filter_by(username=session.get('logged_in')).first()
         user_post_objs = Post.query.filter_by(user_id=user_post_obj.user_id).all()
-        # requests_made_by_user_objs = GetRequest.query.filter_by(user_made_request=user_post_obj).all()
+    # requests_made_by_user_objs = GetRequest.query.filter_by(user_made_request=user_post_obj).all()
         if user_posting_obj.recipient_user_id and user_posting_obj.author.username != session["logged_in"] and session["logged_in"] != user_posting_obj.recipient.username:
             flash("This posting is no longer active.")
             return redirect("/browse")
@@ -333,8 +361,8 @@ def user_posting(post_id):
             num_gets = len([request_made_by_user for request_made_by_user in user_post_obj.get_requests if request_made_by_user.post.recipient_user_id != None])
             # num_gets = len([request_made_by_user for request_made_by_user in requests_made_by_user_objs if request_made_by_user.request_approved == True])
             user_score = calculate_user_score(num_gives, num_gets)
-        
-        return render_template("user_posting.html", user_posting=user_posting_obj, 
+    
+    return render_template("user_posting.html", user_posting=user_posting_obj, 
                                 user_score=user_score, users_requested=usernames_made_requests)
 
 @app.route('/delete_posting')
@@ -426,10 +454,9 @@ def undo_approve():
     return jsonify({'results' : "post is now active"})
 
 def format_date(date):
-    reformat = date.strftime("%I:%M %p on %m-%d-%Y")
+    reformat = date.strftime("%I:%M %p on %m/%d/%Y")
     if reformat[0] == "0":
         reformat = reformat[1:]
-    print type(reformat)
     return reformat
 
 @app.route("/user_profile/<username>")
@@ -447,7 +474,7 @@ def user_profile(username):
     return render_template("user_profile.html", current_user=current_user, profile_user=profile_user_obj, 
                             all_user_activity=all_user_activity_objs, profile_user_posts=profile_user_post_objs)
 
-@app.route("/message_user/<int:sender_id>&<int:recipient_id>", methods=['POST'])
+@app.route("/message_user/<int:sender_id>&<int:recipient_id>")
 def message_user(sender_id, recipient_id):
     """Displays message page between two users."""
 
@@ -496,6 +523,7 @@ def log_out():
 def calculate_unseen_notifications(user):
     """Calculates all the unseen notifications of a particular user."""
 
+    user = User.query.filter_by(username=session['logged_in']).first()
     user_post_objs = Post.query.filter_by(user_id=user.user_id).all() 
     # all the posts made by logged in user
     requests_per_post = {}
@@ -503,15 +531,15 @@ def calculate_unseen_notifications(user):
         requests_per_post[user_post_obj] = user_post_obj.get_requests
     requests_on_each_post = [user_post_obj.get_requests for user_post_obj in user_post_objs]
     unseen_request_objs, all_requests = get_notifications(requests_on_each_post)
-    # all_requests.sort(key=lambda obj: obj.post_id)
+    all_requests.sort(key=lambda obj: obj.post_id)
     offers_on_each_post = [user_post_obj.give_offers for user_post_obj in user_post_objs]
     unseen_offer_objs, all_offers = get_notifications(offers_on_each_post)
     all_offers.sort(key=lambda obj: obj.post_id)
     post_comment_objs_per_post = [user_post.comments for user_post in user_post_objs] 
     unseen_post_comment_objs, all_comments = get_notifications(post_comment_objs_per_post) # a single list of ALL unseen commments for a particular user
     all_comments.sort(key=lambda obj: obj.post_id)
-    num_notifications = len(unseen_offer_objs + unseen_post_comment_objs + unseen_request_objs)
-    return num_notifications
+    notifications = unseen_offer_objs + unseen_post_comment_objs + unseen_request_objs
+    return notifications
 
 EARTH_CIRCUM = 24901 
 MILES_PER_DEG_LNG_AT_EQ = float(EARTH_CIRCUM / 360.0) 

@@ -6,16 +6,16 @@
 	<div id="active_post">
 		<h1>{{ user_posting.title }}</h1>
 			<input id="post_id" name="post_id" type="hidden" value="{{ user_posting.post_id }}">
-			by <a href="/user_profile/{{ user_posting.author.username }}">{{ user_posting.author.username }}</a> at <p id="post_date">{{ user_posting.post_date }}</p><br>
+			by <a href="/user_profile/{{ user_posting.author.username }}">{{ user_posting.author.username }}</a> at <p id="post_date">{{ format_date(user_posting.post_date) }}</p><br>
 			{% if session['logged_in'] == user_posting.author.username %}
 				<button id="delete" name="delete_posting" type="submit" value="{{ user_posting.post_id }}">Delete My Post</button>
 			{% endif %}
 			<p id="post_description">{{ user_posting.description }}</p><br>
 			{% if 'logged_in' in session and user_score > 0 %}
 				<form id="post_comment" action="/save_comment" method="POST">
-					<textarea id="comment_body" name="comment" rows=3 columns=100>
+					<textarea style="color:black" id="comment_body" name="comment" rows=3 columns=100>
 					</textarea><br>
-					<input id="submit_comment" type="submit" value="Post Comment">
+					<input style="color:black" id="submit_comment" type="submit" value="Post Comment">
 				</form><br>
 			{% endif %}
 			<h3>Comments on Posting:</h3>
@@ -34,13 +34,13 @@
 						{% endif %} to <a href="/user_profile/{{ user_posting.author.username }}">{{ user_posting.author.username }}</a>:
 					</div>
 					{% if user_posting.is_give == True %}
-						<textarea id="message" name="message" rows=3 columns=100>
+						<textarea style="color:black" id="message" name="message" rows=3 columns=100>
 						</textarea><br>
-						<button id="get_request" name="request" type="submit" value="get_request">Make Get Request</button>
+						<button style="color:black" id="get_request" name="request" type="submit" value="get_request">Make Get Request</button>
 					{% elif user_posting.is_give == False %}
-						<textarea id="message" name="message" rows=3 columns=100>
+						<textarea style="color:black" id="message" name="message" rows=3 columns=100>
 						</textarea><br>
-						<button id="give_offer" name="offer" type="submit" value="give_offer">Make Give Offer</button>
+						<button style="color:black" id="give_offer" name="offer" type="submit" value="give_offer">Make Give Offer</button>
 					{% endif %}
 					<div id="sent_receipt">
 					</div>

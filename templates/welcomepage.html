@@ -2,5 +2,22 @@
 {% block title %}GWUG Welcome Page{% endblock %}
 
 {% block content %}
-<h1>Welcome to GWhatUG!</h1>
+<div class="row">
+	<div class="col-xs-12">
+		<h1 id="welcome-title">GWhatUG</h1>
+	</div>
+</div>
+{% if 'logged_in' not in session %}
+    <div class="row">
+        <form action="/new_user">
+        <div id="sign-up-wrapper" class="col-xs-12 ">
+            <input id="sign-up-button" type="submit" value="Sign Up for Free!">
+        </div>
+        <div class="col-xs-12">
+            <h6 id="existing-user"><a id="login-link" href="/login_form">Already an existing user? Log in!</a></h6>
+        </div>
+        </form>
+    </div>
+{% endif %}
+
 {% endblock %}

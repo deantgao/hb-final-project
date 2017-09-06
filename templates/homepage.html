@@ -2,15 +2,26 @@
 {% block title %}Homepage{% endblock %}
 
 {% block content %}
-	<h1>Welcome back, {{ session['logged_in'] }}!</h1>
-	<h3>You have <button id="new_notifications" name="notifications" type="submit" value="see_notifications">{{ num_notifications }}</button> new notifications!</h3>
+	<div class="row">
+		<div id="greet-user" class="col-md-12">Welcome back, {{ session['logged_in'] }}!</div>
+	    <div class="col-md-8" style="font-size:35px">You have made a total of {{ num_gives }} gives and {{ num_gets }} gets.</div>
+	    <div class="col-md-4" style="font-size:18px">
+	    	{% if user_score > 0 %}
+				You have {{ user_score }} more gets until it's your turn to give!
+			{% else %}
+				I'm sorry! You must give again before you make another get!
+			{% endif %}
+		</div>
+	</div>
+	<div id="all-notifications" class="row">
+		You have <button id="new_notifications" name="notifications" type="submit" value="see_notifications">{{ num_notifications }}</button> new notifications!
+	</div>
 	<div id="notifications">
 		{% if all_requests|length > 0 %}
 			<div id="requests">
 				<b>Get Requests on Your Posts:</b><br>
 				{% for one_post in requests_per_post if one_post.get_requests|length > 0 %}
 					<div class="each_post_w_requests {{ one_post.post_id }}">
-						<h3><a href="/post/post_id/{{ one_post.post_id }}">{{ one_post.title }}</a></h3>
 						{% for one_request in one_post.get_requests %}
 							<div class="each_get_request {{ one_request.post_id }}">
 								{% if one_request.is_seen == False %}
@@ -23,14 +34,14 @@
 										class="seen request"
 									{% endif %}
 								>
-									<a href="/user_profile/{{ one_request.user_made_request.username }}">{{ one_request.user_made_request.username }}</a> made a get request with the message:<br>
+									<a style="color:#0ff5dc" href="/user_profile/{{ one_request.user_made_request.username }}">{{ one_request.user_made_request.username }}</a> made a get request with the message:<br>
 									{{ one_request.request_message }}<br>
-									Made on: <a id="post_w_request" href="/post/post_id/{{ one_request.post_id}}">{{ one_request.post.title }}</a> at {{ format_date(one_request.time_requested) }}<br><br>
+									Made on: <a style="color:#0ff5dc" id="post_w_request" href="/post/post_id/{{ one_request.post_id}}">{{ one_request.post.title }}</a> at {{ format_date(one_request.time_requested) }}<br><br>
 								</div>
-								<button class="approve_request" name="approve" type="submit" data-request-id="{{ one_request.request_id }}" data-post-id="{{ one_request.post_id }}">Approve THIS Request for post: {{ one_request.post.title }}</button><br><br>
+								<button style="color:black" class="approve_request" name="approve" type="submit" data-request-id="{{ one_request.request_id }}" data-post-id="{{ one_request.post_id }}">APPROVE</button><br><br>
 							</div>
 						{% endfor %}
-							<button class="undo_approve" name="undo" type="submit" data-undo-id="{{ one_post.post_id }}">Undo Approve Request for post {{ one_post.title }}</button><br>
+							<button style="color:black" class="undo_approve" name="undo" type="submit" data-undo-id="{{ one_post.post_id }}">Undo Approve Request for post {{ one_post.title }}</button><br>
 					</div>
 				{% endfor %}
 			</div> 
@@ -41,13 +52,13 @@
 				<b>Give Offers on Your Posts:</b><br>
 				{% for offer in all_offers %} 
 						{% if offer.is_seen == True %}
-							<div id="{{ offer.offer_id }}" class="seen offer">
-								<a href="/user_profile/{{ offer.user_made_offer.username }}">{{ offer.user_made_offer.username }}</a> made a give offer with the message:<br>
+							<div style="color:white" id="{{ offer.offer_id }}" class="seen offer">
+								<a style="color:#0ff5dc" href="/user_profile/{{ offer.user_made_offer.username }}">{{ offer.user_made_offer.username }}</a> made a give offer with the message:<br>
 								{{ offer.offer_message }}<br>
-								Made on: <a id="post_w_offer" href="/post/post_id/{{ offer.post_id}}">{{ offer.post.title }}</a> at {{ format_date(offer.time_offered) }}<br><br>
+								Made on: <a style="color:#0ff5dc" id="post_w_offer" href="/post/post_id/{{ offer.post_id}}">{{ offer.post.title }}</a> at {{ format_date(offer.time_offered) }}<br><br>
 							</div>
 						{% elif offer.is_seen == False %}
-							<div class="unseen"><i>New!</i></div>
+							<div style="color:#ff38ff" class="unseen"><i>New!</i></div>
 							<div id="{{ offer.offer_id }}" class="unseen offer">
 								<a href="/user_profile/{{ offer.user_made_offer.username }}">{{ offer.user_made_offer.username }}</a> made a give offer with the message:<br>
 								{{ offer.offer_message }}<br>
@@ -62,13 +73,13 @@
 				<b>Comments on Your Posts:</b><br>
 				{% for comment in all_comments %}
 					{% if comment.is_seen == True %}
-						<div id="{{ comment.comment_id }}" class="seen comment">
-							<a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a> made a comment:<br>
+						<div style="color:white" id="{{ comment.comment_id }}" class="seen comment">
+							<a style="color:#0ff5dc" href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a> made a comment:<br>
 							{{ comment.comment_body }}<br>
-							Made on: <a id="post_w_comment" href="/post/post_id/{{ comment.post_id}}">{{ comment.post.title }}</a> at {{ format_date(comment.time_posted) }}<br><br>
+							Made on: <a style="color:#0ff5dc" id="post_w_comment" href="/post/post_id/{{ comment.post_id}}">{{ comment.post.title }}</a> at {{ format_date(comment.time_posted) }}<br><br>
 						</div>
 					{% elif comment.is_seen == False %}
-						<div class="unseen"><i>New!</i></div>
+						<div style="color:#ff38ff" class="unseen"><i>New!</i></div>
 						<div id="{{ comment.comment_id }}" class="unseen comment">
 							<a href="/user_profile/{{ comment.user.username }}">{{ comment.user.username }}</a> made a comment:<br>
 							{{ comment.comment_body }}<br>
@@ -80,19 +91,14 @@
 			</div>
 		{% endif %}
 	</div>
-	<p>You have made a total of {{ num_gives }} gives and {{ num_gets }} gets.<br>
-	{% if user_score > 0 %}
-		<b>You have {{ user_score }} more gets until it's your turn to give!</b>
-	{% else %}
-		<b>I'm sorry! You must give again before you make another get!</b>
-	{% endif %}
-	<h2>What are you interested in today?</h2>
-	<form action="/user_interest">
-		<input type="hidden" id="user_score" value="{{ user_score }}">
-		<button id="give_button" name="user_interest" type="submit" value="give">"I want to give something!"</button><br>
-		<button id="get_button" name="user_interest" type="submit" value="get">"I want to get something!"</button><br>
-	</form>
-
+	<div id="interest-today" class="row">
+		<h2 style="margin-bottom: 30px;">What are you interested in today?</h2>
+		<form action="/user_interest">
+			<input type="hidden" id="user_score" value="{{ user_score }}">
+			<button id="give_button" name="user_interest" type="submit" value="give">"I want to give something!"</button><br>
+			<button id="get_button" name="user_interest" type="submit" value="get">"I want to get something!"</button><br>
+		</form>
+	</div>
 	<script>
 		$('#notifications').hide();
 		$('.undo_approve').hide();

@@ -4,10 +4,25 @@
 {% block content %}
 	<h1>Please Log In!</h1>
 	<form action="/verify_user" method="POST">
-		Username:
-		<input type="text" name="username" id="username"><br>
-		Password: 
-		<input type="password" name="password" id="password"> 
-		<input type="submit" value="Log In">
-	</form>
+		<div class="row">
+			<div class="col-xs-4 login">
+				Username:
+				<input style="color:black" class="form-control" type="text" name="username" id="username"><br>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-xs-4 login">
+				Password: 
+				<input style="color:black" class="form-control" type="password" name="password" id="password"><br> 
+			</div>
+		</div>	
+		<input style="color:black" class="btn btn-default" type="submit" value="Log In">
+	</form><br>
+	 <div class="row">
+        <form action="/new_user">
+	        <div id="sign-up-wrapper" class="col-xs-12" style="text-align:left">
+	            <input style="color:black" type="submit" value="Sign Up for Free!">
+	        </div>
+        </form>
+    </div>
 {% endblock %}
