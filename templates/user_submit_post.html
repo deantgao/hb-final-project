@@ -3,9 +3,9 @@
 
 {% block content %}
 	{% if user_interest == "give" %}
-		<h1>{{ give_compliment }}, {{ session['logged_in'] }}!</h1>
+		<h1 style="color:#0ff5dc">{{ give_compliment }}, {{ session['logged_in'] }}!</h1>
 	{% else %}
-		<h1>{{ get_compliment }}, {{ session['logged_in'] }}!</h1>
+		<h1 style="color:#0ff5dc">{{ get_compliment }}, {{ session['logged_in'] }}!</h1>
 	{% endif %}
 		
 	<form id="confirm_post" action="/confirm_post" method="POST">
@@ -26,13 +26,13 @@
 		{% endif %}
 		post matches:<br>
 		{% for category in categories %}
-			<input type="checkbox" name="category" value="{{category.category_id}}" class="category">{{category.category_name}}<br>
+			<input type="checkbox" name="category" value="{{category.category_id}}" class="category">{{category.category_name}}
 		{% endfor %}
 		<!-- <input type="submit" id="tagPost" name="tagPost" value="Tag My Post">
 		<div id="category_tags">
 		</div><br> -->
 		<br>
-		Post Title: 
+		Post Title:<br> 
 		<input style="color:black" name="post_title" id="post_title" type="text"><br><br>
 		Please enter the body of your post:<br>
 		<textarea style="color:black" rows=8 columns=50 id="post_message" name="post_message">

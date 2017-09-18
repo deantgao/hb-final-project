@@ -20,7 +20,7 @@
 
         body {
             color:white;
-            background: rgba(0,30,20,.5);
+            background: rgba(50,50,50,.9);
             font-family: "Oswald", serif;
             background-size: cover;
             {% if not "logged_in" in session %}
@@ -41,6 +41,9 @@
 
         textarea {
             color:black;
+            font-size:15px;
+            width: 450px;
+            height: 150px;
         }
         
         #post_message {
@@ -141,10 +144,34 @@
             box-shadow: 0 0 12px 1px;
             margin-bottom: 25px;
         }
+        #progress-bar {
+            height: 32px;
+            border-radius: 10px;
+        }
+        #gives-bar {
+            background-color: #0ff5dc;
+            height: 40px;
+            font-size: 24px;
+            line-height: 26px;
+        }
+
+        #gets-bar {
+            background-color: #ff38ff;
+            height: 40px;
+            font-size: 24px;
+            line-height: 26px;
+        }
+        #user-score {
+            font-size: 18px;
+            text-align: center;
+            width: 101.333%;
+        }
         #greet-user {
             text-align:center;
             font-size:75px;
             color: #0ff5dc;
+            margin: 50px;
+            padding-right: 90px;
         }
         #get_button {
             color: white;
@@ -175,6 +202,9 @@
             border: 0px;
             box-shadow: 0 0 12px 1px;
         }
+        #notifications {
+            text-align: center;
+        }
         #filter_search {
             color:black;
             border-radius: 10px;
@@ -183,6 +213,18 @@
         #miles {
             color:black;
             border-radius: 2px;
+        }
+        #follow {
+            width: 145px;
+            height: 25px;
+            font-size: large;
+            margin: 5px;
+        }
+        #message {
+            width: 145px;
+            height: 25px;
+            font-size: large;
+            margin: 5px;
         }
 
     </style>

@@ -2,17 +2,17 @@
 {% block title %}Confirm User Post{% endblock %}
 
 {% block content %}
-	<h1>Thanks for your post, {{ session['logged_in'] }}!</h1><br>
+	<h1 style="color:#0ff5dc">Thanks for your post, {{ session['logged_in'] }}!</h1><br>
 	<form action="/browse" method="POST">
 		{% if is_give == True %}
 			<input name="post_type" type="hidden" value="give">
-			<input name="browse" type="submit" id="user_browse" value="Continue on to browsing!">
+			<input style="color:black" name="browse" type="submit" id="user_browse" value="Continue on to browsing!">
 		{% else %}
 			<input name="post_type" type="hidden" value="get">
 			{% for category in post_categories %}
 				<input name="post_category" type="hidden" value="{{ category.category_id }}">
 			{% endfor %}
-			<input name="browse" type="submit" id="user_browse" value="Continue on to browsing!">
+			<input style="color:black" name="browse" type="submit" id="user_browse" value="Continue on to browsing!">
 		{% endif %}
 	</form>
 		

@@ -26,7 +26,7 @@
 						<input class="type" type="radio" name="post_type" value="give">Give
 						<input class="type" type="radio" name="post_type" value="get">Get
 						<input class="type" type="radio" name="post_type" value="all" checked="checked">All<br><br>
-				Within <select style="color:black" id="miles" name="distance">
+				Within <select id="miles" name="distance">
 						<option value="0"></option>
 						<option value="1">1</option>
 						<option value="5">5</option>
@@ -130,7 +130,7 @@
 			zoom = 3;
 		}
 		console.log(givenMiles);
-		var latitude = $('#input_lat').val();
+		var latitude = $('input_lat').val();
 		if (latitude === "") {
 			latitude = "39.8097";
 			zoom = 3;
@@ -140,7 +140,7 @@
 			longitude = "-98.5556";
 			zoom = 3;
 		}
-		var postType = $('.type').val();
+		var postType = $('input[name=post_type]:checked').val();
 		var keyword = $('#keyword_search').val();
 		var address = $('#location_search').val();
 		var categories = $('input:checked').map(function () {

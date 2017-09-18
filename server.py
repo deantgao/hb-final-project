@@ -119,7 +119,7 @@ def verify_user():
     user = User.query.filter_by(username=username).first()
     if user and user.password == password: 
         session['logged_in'] = username
-        session['postings'] = Post.query.filter_by(user_id=user.user_id).all()
+        # session['postings'] = Post.query.filter_by(user_id=user.user_id).all()
         # pass all user related info in through sessions
         flash("Logged in as {}".format(username))
         return redirect('/user_home')
@@ -290,10 +290,8 @@ def filter_search():
     print "what does this ID as the post type?", post_type
     address = request.args.get("address") 
     lat = request.args.get("latitude")
-    print "is any of this coming in ???", lat
     lng = request.args.get("longitude")
     miles = request.args.get("given_miles")
-    print "what are these miles coming in as??", miles
     category_ids = request.args.getlist("categories[]")[1:]
 
     results = Post.query
@@ -370,7 +368,10 @@ def delete_posting():
     """Deletes a user's posting from the database."""
 
     post_id = request.args.get("post_id")
+    print "what is the post id here?", post_id
+    # if Post.query.filter_by(post_id=post_id).first().post_categories:
     post_categories_to_delete = PostCategory.query.filter_by(post_id=post_id).delete()
+    post_comments_to_delete = PostComment.query.filter_by(post_id=post_id).delete()
     # db.session.delete(post_categories_to_delete)
     db.session.commit()
     post_to_delete = Post.query.filter_by(post_id=post_id).first()
